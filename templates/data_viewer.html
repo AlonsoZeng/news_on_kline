@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据查看器 - 事件数据管理</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .nav-tabs {
+            display: flex;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.3s ease;
+        }
+        .nav-tab:hover {
+            background-color: #e9ecef;
+        }
+        .nav-tab.active {
+            background-color: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .data-table {
+            width: 100%;
+            min-width: 800px;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .data-table th {
+            background-color: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 500;
+        }
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .data-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .event-type-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .event-type-custom {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        .event-type-policy {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+        }
+        .event-type-economic {
+            background-color: #e8f5e8;
+            color: #388e3c;
+        }
+        
+        /* 内容类型标签样式 */
+        .content-type-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        
+        .content-type-政策 {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .content-type-新闻 {
+            background-color: #fff3e0;
+            color: #f57c00;
+        }
+        
+        /* 新增标签样式 */
+        .department-tag {
+            background-color: #17a2b8;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        
+        .policy-level-tag {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .policy-level-tag.policy-level-国家级 {
+            background-color: #dc3545;
+            color: white;
+        }
+        .policy-level-tag.policy-level-部委级 {
+            background-color: #fd7e14;
+            color: white;
+        }
+        .policy-level-tag.policy-level-地方级 {
+            background-color: #20c997;
+            color: white;
+        }
+        
+        .impact-level-tag {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .impact-level-tag.impact-高 {
+            background-color: #dc3545;
+            color: white;
+        }
+        .impact-level-tag.impact-中 {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .impact-level-tag.impact-低 {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        /* AI分析结果标签样式 */
+        .ai-tag {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 2px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        .ai-industry {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
+        }
+        
+        .ai-sector {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+            border: 1px solid #e1bee7;
+        }
+        
+        .ai-stock {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+            cursor: help;
+        }
+        
+        .ai-stock:hover {
+            background-color: #c8e6c9;
+            transform: scale(1.05);
+            transition: all 0.2s ease;
+        }
+        
+        .no-data {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 0.85em;
+        }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .action-buttons {
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background-color: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #5a6fd8;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .data-control-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .data-control-section h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .fetch-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .fetch-status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fetch-status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .fetch-status.loading {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5em;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            opacity: 0.7;
+        }
+        
+        .modal-body {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background-color: #f8f9fa;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #667eea;
+            background-color: #f0f2ff;
+        }
+        
+        .file-upload-area.dragover {
+            border-color: #667eea;
+            background-color: #e3f2fd;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+        
+        .upload-text {
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e3f2fd;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>数据查看器</h1>
+            <p>查看和管理事件数据库中的所有数据</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('overview', event)">数据概览</button>
+            <button class="nav-tab" onclick="showTab('events', event)">事件数据</button>
+            <button class="nav-tab" onclick="showTab('analysis', event)">数据分析</button>
+        </div>
+        
+        <!-- 数据概览标签页 -->
+        <div id="overview" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ total_events }}</div>
+                    <div class="stat-label">总事件数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ event_types_count }}</div>
+                    <div class="stat-label">事件类型数</div>
+                </div>
+                {% if departments_count %}
+                <div class="stat-card">
+                    <div class="stat-number">{{ departments_count }}</div>
+                    <div class="stat-label">发布部门</div>
+                </div>
+                {% endif %}
+                <div class="stat-card">
+                    <div class="stat-number">{{ date_range_days }}</div>
+                    <div class="stat-label">数据跨度(天)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ latest_event_date }}</div>
+                    <div class="stat-label">最新事件日期</div>
+                </div>
+                {% if data_quality and data_quality.valid_urls_ratio %}
+                <div class="stat-card">
+                    <div class="stat-number">{{ data_quality.valid_urls_ratio }}%</div>
+                    <div class="stat-label">链接完整性</div>
+                </div>
+                {% endif %}
+                {% if data_quality and data_quality.empty_industries_count is defined %}
+                <div class="stat-card">
+                    <div class="stat-number">{{ data_quality.empty_industries_count }}</div>
+                    <div class="stat-label">未分析行业数</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <h3>事件类型分布</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>事件类型</th>
+                        <th>数量</th>
+                        <th>占比</th>
+                        <th>最新事件</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for type_stat in event_type_stats %}
+                    <tr>
+                        <td>
+                            <span class="event-type-badge event-type-{{ type_stat.type }}">
+                                {{ type_stat.type_display }}
+                            </span>
+                        </td>
+                        <td>{{ type_stat.count }}</td>
+                        <td>{{ "%.1f" | format(type_stat.percentage) }}%</td>
+                        <td>{{ type_stat.latest_date }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 事件数据标签页 -->
+        <div id="events" class="tab-content">
+            <!-- 数据获取控制 -->
+            <div class="data-control-section">
+                <h4>🔄 数据管理</h4>
+                <button id="fetchPolicyData" class="btn btn-primary">获取最新政策数据</button>
+                <button id="aiAnalysisBtn" class="btn btn-success">🤖 AI政策分析</button>
+                <div id="fetchStatus" class="fetch-status"></div>
+                <div id="aiAnalysisStatus" class="fetch-status"></div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('index') }}" class="btn btn-primary">返回K线图</a>
+                <button class="btn btn-success" onclick="showCreateEventModal()">📝 新建事件</button>
+                <button class="btn btn-success" onclick="showImportModal()">📁 批量导入</button>
+                <button class="btn btn-success" onclick="exportData()">导出数据</button>
+                <a href="/api/download-template" class="btn" style="background-color: #6c757d; color: white;">📥 下载模板</a>
+            </div>
+            
+            <input type="text" class="search-box" id="eventSearch" placeholder="搜索事件标题或日期..." onkeyup="filterEvents()">
+            
+            {% if events %}
+            <div class="table-wrapper">
+                <table class="data-table" id="eventsTable">
+                    <thead>
+                        <tr>
+                            <th>日期 <small class="text-muted">(pe.date)</small></th>
+                            <th>事件标题 <small class="text-muted">(pe.title)</small></th>
+                            <th>内容类型 <small class="text-muted">(pe.content_type)</small></th>
+                            <th>事件类型 <small class="text-muted">(pe.event_type)</small></th>
+                            {% if events and events[0].department %}
+                            <th>发布部门 <small class="text-muted">(pe.department)</small></th>
+                            <th>政策级别 <small class="text-muted">(pe.policy_level)</small></th>
+                            <th>影响级别 <small class="text-muted">(pe.impact_level)</small></th>
+                            {% endif %}
+                            <th>相关行业 <small class="text-muted">(pa.industries)</small></th>
+                            <th>创建时间 <small class="text-muted">(pe.created_at)</small></th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td>{{ event.date }}</td>
+                        <td>
+                            {% if event.source_url %}
+                            <a href="{{ event.source_url }}" target="_blank" title="查看原文">{{ event.title }}</a>
+                            {% else %}
+                            {{ event.title }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="content-type-badge content-type-{{ event.content_type or '政策' }}">
+                                {{ event.content_type or '政策' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="event-type-badge event-type-{{ event.event_type }}">
+                                {% if event.event_type == 'custom' %}
+                                    自定义
+                                {% elif event.event_type == 'policy' %}
+                                    政策
+                                {% elif event.event_type == 'economic' %}
+                                    经济
+                                {% else %}
+                                    {{ event.event_type }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        {% if event.department %}
+                        <td><span class="department-tag">{{ event.department }}</span></td>
+                        <td><span class="policy-level-tag policy-level-{{ event.policy_level }}">{{ event.policy_level }}</span></td>
+                        <td><span class="impact-level-tag impact-{{ event.impact_level }}">{{ event.impact_level }}</span></td>
+                        {% endif %}
+                        <td>
+                            {% if event.ai_industries %}
+                                {% for industry in event.ai_industries %}
+                                    <span class="ai-tag ai-industry">{{ industry }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="no-data">未分析</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ event.created_at or '未知' }}</td>
+                        <td>
+                            <button class="btn btn-sm" onclick="viewEvent('{{ event.title }}')">查看</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteEvent('{{ event.title }}')">删除</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.5;">📊</div>
+                <h3>暂无事件数据</h3>
+                <p>数据库中还没有任何事件数据</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 数据分析标签页 -->
+        <div id="analysis" class="tab-content">
+            <h3>数据质量分析</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ data_quality.completeness }}%</div>
+                    <div class="stat-label">数据完整性</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ data_quality.avg_events_per_month }}</div>
+                    <div class="stat-label">月均事件数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ data_quality.unique_dates }}</div>
+                    <div class="stat-label">有事件的日期数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">{{ data_quality.max_events_per_day }}</div>
+                    <div class="stat-label">单日最多事件数</div>
+                </div>
+            </div>
+            
+            <h3>时间分布分析</h3>
+            <p>这里可以添加图表来显示事件的时间分布情况</p>
+        </div>
+    </div>
+    
+    <!-- 新建事件模态框 -->
+    <div id="createEventModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📝 新建事件</h3>
+                <span class="close" onclick="closeModal('createEventModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="createEventForm">
+                    <div class="form-group">
+                        <label for="eventDate">事件日期 *</label>
+                        <input type="date" id="eventDate" name="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eventTitle">事件标题 *</label>
+                        <input type="text" id="eventTitle" name="title" placeholder="请输入事件标题" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sourceUrl">原文链接</label>
+                        <input type="url" id="sourceUrl" name="source_url" placeholder="请输入原文链接（可选）">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contentType">内容类型</label>
+                            <select id="contentType" name="content_type">
+                                <option value="">请选择</option>
+                                <option value="政策文件">政策文件</option>
+                                <option value="新闻报道">新闻报道</option>
+                                <option value="公告通知">公告通知</option>
+                                <option value="会议纪要">会议纪要</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="eventType">事件类型</label>
+                            <select id="eventType" name="event_type">
+                                <option value="">请选择</option>
+                                <option value="货币政策">货币政策</option>
+                                <option value="财政政策">财政政策</option>
+                                <option value="监管政策">监管政策</option>
+                                <option value="产业政策">产业政策</option>
+                                <option value="经济数据">经济数据</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="department">发布部门</label>
+                            <input type="text" id="department" name="department" placeholder="如：央行、银保监会等">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="policyLevel">政策级别</label>
+                            <select id="policyLevel" name="policy_level">
+                                <option value="">请选择</option>
+                                <option value="国家级">国家级</option>
+                                <option value="部委级">部委级</option>
+                                <option value="地方级">地方级</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="impactLevel">影响级别</label>
+                            <select id="impactLevel" name="impact_level">
+                                <option value="">请选择</option>
+                                <option value="重大">重大</option>
+                                <option value="中等">中等</option>
+                                <option value="轻微">轻微</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="industries">相关行业</label>
+                            <input type="text" id="industries" name="industries" placeholder="多个行业用逗号分隔，如：银行,保险">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="eventContent">事件内容</label>
+                        <textarea id="eventContent" name="content" placeholder="请输入事件的详细内容"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="aiAnalysis">AI分析</label>
+                        <textarea id="aiAnalysis" name="ai_analysis" placeholder="AI分析结果（可选）"></textarea>
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 30px;">
+                        <button type="button" class="btn" onclick="closeModal('createEventModal')" style="background-color: #6c757d; color: white; margin-right: 10px;">取消</button>
+                        <button type="submit" class="btn btn-primary">创建事件</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 批量导入模态框 -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📁 批量导入事件</h3>
+                <span class="close" onclick="closeModal('importModal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="file-upload-area" id="fileUploadArea">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">点击选择CSV文件或拖拽文件到此处</div>
+                    <div style="font-size: 0.9em; color: #999;">支持格式：CSV文件</div>
+                    <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                </div>
+                
+                <div id="fileInfo" class="file-info">
+                    <strong>已选择文件：</strong><span id="fileName"></span><br>
+                    <strong>文件大小：</strong><span id="fileSize"></span>
+                </div>
+                
+                <div id="importProgress" class="progress-bar">
+                    <div id="importProgressFill" class="progress-fill"></div>
+                </div>
+                
+                <div id="importStatus" class="fetch-status" style="margin-top: 15px;"></div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <p style="color: #6c757d; font-size: 0.9em;">💡 提示：请先下载模板文件，按照格式填写数据后再上传</p>
+                </div>
+                
+                <div style="text-align: right; margin-top: 30px;">
+                    <button type="button" class="btn" onclick="closeModal('importModal')" style="background-color: #6c757d; color: white; margin-right: 10px;">取消</button>
+                    <button type="button" class="btn btn-primary" id="startImportBtn" onclick="startImport()" disabled>开始导入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function showTab(tabName, event) {
+            // 隐藏所有标签页内容
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // 移除所有标签的active类
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // 显示选中的标签页内容
+            const targetContent = document.getElementById(tabName);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            
+            // 添加active类到选中的标签
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // 如果没有event对象（比如页面加载时），根据tabName找到对应的按钮
+                const targetTab = document.querySelector(`[onclick*="showTab('${tabName}')"]`);
+                if (targetTab) {
+                    targetTab.classList.add('active');
+                }
+            }
+            
+            // 更新URL参数
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabName);
+            window.history.replaceState({}, '', url);
+        }
+        
+        // 页面加载时检查URL参数并显示对应的tab
+        function initializeTab() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('tab');
+            
+            // 验证tab参数是否有效
+            const validTabs = ['overview', 'events', 'analysis'];
+            const activeTab = validTabs.includes(tabParam) ? tabParam : 'overview';
+            
+            // 显示对应的tab
+            showTab(activeTab);
+        }
+        
+        function filterEvents() {
+            const searchTerm = document.getElementById('eventSearch').value.toLowerCase();
+            const table = document.getElementById('eventsTable');
+            if (!table) return;
+            
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) { // 跳过表头
+                const row = rows[i];
+                const date = row.cells[0].textContent.toLowerCase();
+                const title = row.cells[1].textContent.toLowerCase();
+                
+                if (date.includes(searchTerm) || title.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        }
+        
+        function exportData() {
+            // 这里可以实现数据导出功能
+            alert('数据导出功能待实现');
+        }
+        
+        function viewEvent(title) {
+            // 查看事件详情功能
+            alert('查看事件详情: ' + title);
+        }
+        
+        function deleteEvent(title) {
+            // 二次确认删除
+            if (confirm('确定要删除事件 "' + title + '" 吗？\n\n此操作不可撤销！')) {
+                // 显示删除状态
+                const deleteButton = event.target;
+                const originalText = deleteButton.textContent;
+                deleteButton.disabled = true;
+                deleteButton.textContent = '删除中...';
+                
+                fetch('/delete-event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: title
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('删除成功: ' + data.message);
+                        // 刷新页面以更新数据
+                        location.reload();
+                    } else {
+                        alert('删除失败: ' + data.message);
+                        deleteButton.disabled = false;
+                        deleteButton.textContent = originalText;
+                    }
+                })
+                .catch(error => {
+                    alert('网络错误: ' + error.message);
+                    deleteButton.disabled = false;
+                    deleteButton.textContent = originalText;
+                });
+            }
+        }
+        
+        // 数据获取功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化tab显示
+            initializeTab();
+            
+            const fetchButton = document.getElementById('fetchPolicyData');
+            const statusDiv = document.getElementById('fetchStatus');
+            const aiAnalysisBtn = document.getElementById('aiAnalysisBtn');
+            const aiStatusDiv = document.getElementById('aiAnalysisStatus');
+            
+            if (fetchButton) {
+                fetchButton.addEventListener('click', function() {
+                    fetchButton.disabled = true;
+                    fetchButton.textContent = '获取中...';
+                    
+                    statusDiv.className = 'fetch-status loading';
+                    statusDiv.textContent = '正在获取最新政策数据，请稍候...';
+                    statusDiv.style.display = 'block';
+                    
+                    fetch('/fetch-policy-data', {
+                         method: 'POST',
+                         headers: {
+                             'Content-Type': 'application/json'
+                         }
+                     })
+                     .then(response => response.json())
+                     .then(data => {
+                         if (data.success) {
+                             statusDiv.className = 'fetch-status success';
+                             statusDiv.textContent = data.message;
+                             // 3秒后刷新页面
+                             setTimeout(() => {
+                                 location.reload();
+                             }, 3000);
+                         } else {
+                             statusDiv.className = 'fetch-status error';
+                             statusDiv.textContent = `获取失败: ${data.message}`;
+                         }
+                     })
+                    .catch(error => {
+                        statusDiv.className = 'fetch-status error';
+                        statusDiv.textContent = `网络错误: ${error.message}`;
+                    })
+                    .finally(() => {
+                        fetchButton.disabled = false;
+                        fetchButton.textContent = '获取最新政策数据';
+                    });
+                });
+            }
+            
+            // AI分析功能
+            if (aiAnalysisBtn) {
+                aiAnalysisBtn.addEventListener('click', function() {
+                    aiAnalysisBtn.disabled = true;
+                    aiAnalysisBtn.textContent = '🤖 分析中...';
+                    
+                    aiStatusDiv.className = 'fetch-status loading';
+                    aiStatusDiv.textContent = '正在使用AI分析政策数据，请稍候...';
+                    aiStatusDiv.style.display = 'block';
+                    
+                    fetch('/ai-analysis', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            limit: 10  // 分析最近10条未处理的政策
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            aiStatusDiv.className = 'fetch-status success';
+                            aiStatusDiv.textContent = data.message;
+                            // 3秒后刷新页面
+                            setTimeout(() => {
+                                location.reload();
+                            }, 3000);
+                        } else {
+                            aiStatusDiv.className = 'fetch-status error';
+                            aiStatusDiv.textContent = `AI分析失败: ${data.message}`;
+                        }
+                    })
+                    .catch(error => {
+                        aiStatusDiv.className = 'fetch-status error';
+                        aiStatusDiv.textContent = `网络错误: ${error.message}`;
+                    })
+                    .finally(() => {
+                        aiAnalysisBtn.disabled = false;
+                        aiAnalysisBtn.textContent = '🤖 AI政策分析';
+                    });
+                });
+            }
+            
+            // 初始化事件管理功能
+            initEventManagement();
+        });
+        
+        // 事件管理相关函数
+        function showCreateEventModal() {
+            document.getElementById('createEventModal').style.display = 'block';
+            // 设置默认日期为今天
+            document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
+        }
+        
+        function showImportModal() {
+            document.getElementById('importModal').style.display = 'block';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            // 重置表单
+            if (modalId === 'createEventModal') {
+                document.getElementById('createEventForm').reset();
+            } else if (modalId === 'importModal') {
+                resetImportModal();
+            }
+        }
+        
+        function resetImportModal() {
+            document.getElementById('csvFileInput').value = '';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('importProgress').style.display = 'none';
+            document.getElementById('importStatus').style.display = 'none';
+            document.getElementById('startImportBtn').disabled = true;
+            document.getElementById('fileUploadArea').classList.remove('dragover');
+        }
+        
+        function initEventManagement() {
+            // 新建事件表单提交
+            document.getElementById('createEventForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this);
+                const eventData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    eventData[key] = value;
+                }
+                
+                // 显示加载状态
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.disabled = true;
+                submitBtn.textContent = '创建中...';
+                
+                fetch('/api/create-event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(eventData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('事件创建成功！');
+                        closeModal('createEventModal');
+                        location.reload(); // 刷新页面显示新数据
+                    } else {
+                        alert('创建失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('网络错误: ' + error.message);
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                });
+            });
+            
+            // 文件上传区域事件
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const csvFileInput = document.getElementById('csvFileInput');
+            
+            fileUploadArea.addEventListener('click', () => {
+                csvFileInput.click();
+            });
+            
+            // 拖拽上传
+            fileUploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileUploadArea.classList.add('dragover');
+            });
+            
+            fileUploadArea.addEventListener('dragleave', () => {
+                fileUploadArea.classList.remove('dragover');
+            });
+            
+            fileUploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileUploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            });
+            
+            csvFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+        }
+        
+        function handleFileSelect(file) {
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('请选择CSV文件');
+                return;
+            }
+            
+            // 显示文件信息
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('startImportBtn').disabled = false;
+            
+            // 存储文件到全局变量
+            window.selectedFile = file;
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function startImport() {
+            if (!window.selectedFile) {
+                alert('请先选择文件');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', window.selectedFile);
+            
+            // 显示进度条
+            const progressBar = document.getElementById('importProgress');
+            const progressFill = document.getElementById('importProgressFill');
+            const statusDiv = document.getElementById('importStatus');
+            const importBtn = document.getElementById('startImportBtn');
+            
+            progressBar.style.display = 'block';
+            progressFill.style.width = '0%';
+            statusDiv.className = 'fetch-status loading';
+            statusDiv.textContent = '正在导入数据，请稍候...';
+            statusDiv.style.display = 'block';
+            
+            importBtn.disabled = true;
+            importBtn.textContent = '导入中...';
+            
+            // 模拟进度
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 90) progress = 90;
+                progressFill.style.width = progress + '%';
+            }, 200);
+            
+            fetch('/api/import-events', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                progressFill.style.width = '100%';
+                
+                if (data.success) {
+                    statusDiv.className = 'fetch-status success';
+                    statusDiv.textContent = data.message;
+                    
+                    if (data.errors && data.errors.length > 0) {
+                        statusDiv.textContent += '\n\n错误详情:\n' + data.errors.join('\n');
+                    }
+                    
+                    setTimeout(() => {
+                        closeModal('importModal');
+                        location.reload();
+                    }, 3000);
+                } else {
+                    statusDiv.className = 'fetch-status error';
+                    statusDiv.textContent = '导入失败: ' + data.message;
+                }
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                statusDiv.className = 'fetch-status error';
+                statusDiv.textContent = '网络错误: ' + error.message;
+            })
+            .finally(() => {
+                importBtn.disabled = false;
+                importBtn.textContent = '开始导入';
+            });
+        }
+        
+        // 点击模态框外部关闭
+        window.addEventListener('click', function(event) {
+            const createModal = document.getElementById('createEventModal');
+            const importModal = document.getElementById('importModal');
+            
+            if (event.target === createModal) {
+                closeModal('createEventModal');
+            }
+            if (event.target === importModal) {
+                closeModal('importModal');
+            }
+        });
+    </script>
+</body>
+</html>

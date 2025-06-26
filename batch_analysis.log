@@ -1,0 +1,6 @@
+2025-06-22 11:23:39,673 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
+2025-06-22 11:23:39,998 - werkzeug - WARNING -  * Debugger is active!
+2025-06-22 11:23:40,423 - werkzeug - INFO -  * Debugger PIN: 109-372-807
+2025-06-22 11:23:42,160 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-22 11:23:42,172 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)

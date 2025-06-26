@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能股票分析平台 - K线图</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a6fd8;
+            --secondary-color: #764ba2;
+            --accent-color: #f093fb;
+            --success-color: #4ecdc4;
+            --warning-color: #feca57;
+            --danger-color: #ff6b6b;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --white: #ffffff;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-400: #ced4da;
+            --gray-500: #adb5bd;
+            --gray-600: #6c757d;
+            --gray-700: #495057;
+            --gray-800: #343a40;
+            --gray-900: #212529;
+            --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+            --border-radius: 12px;
+            --border-radius-lg: 16px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--gray-800);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--white) 0%, rgba(255,255,255,0.8) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .search-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .search-form {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: var(--gray-700);
+            white-space: nowrap;
+        }
+
+        .form-input {
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--gray-300);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--white);
+            min-width: 200px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: var(--white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--accent-color) 100%);
+            color: var(--white);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stock-info {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .stock-code {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stock-name {
+            font-size: 1.3rem;
+            color: var(--gray-600);
+            font-weight: 400;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+
+        .chart-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: var(--transition);
+        }
+
+        .chart-section:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .chart-controls {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .chart-container {
+            height: 600px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+        }
+
+        .events-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: var(--transition);
+        }
+
+        .events-section:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .events-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .events-header h4 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin: 0;
+        }
+
+        /* 事件筛选器样式已删除 */
+
+        .events-list {
+            height: 500px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--gray-400) transparent;
+        }
+
+        .events-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .events-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .events-list::-webkit-scrollbar-thumb {
+            background: var(--gray-400);
+            border-radius: 3px;
+        }
+
+        .events-list::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500);
+        }
+
+        .event-item {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+            transition: left 0.3s;
+        }
+
+        .event-item:hover::before {
+            left: 100%;
+        }
+
+        .event-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .event-date {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .event-title {
+            color: var(--gray-700);
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .data-source {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        /* 动画定义 */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .events-section {
+                order: -1;
+            }
+            
+            .events-list {
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .search-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .form-input {
+                min-width: auto;
+            }
+            
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    <!-- 引入ECharts JS库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="background-overlay"></div>
+    
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-chart-line"></i> 智能股票分析平台</h1>
+            <p>专业的K线图分析工具，助您洞察市场趋势</p>
+        </header>
+
+        <section class="search-section">
+            <form method="POST" action="{{ url_for('index') }}" class="search-form">
+                <div class="form-group">
+                    <label for="stock_code"><i class="fas fa-search"></i> 股票代码/名称:</label>
+                    <input type="text" id="stock_code" name="stock_code" class="form-input" 
+                           value="{{ current_stock_code if current_stock_code else '000001.SH' }}" 
+                           placeholder="请输入股票代码或名称" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> 查询分析
+                </button>
+                <a href="{{ url_for('data_viewer') }}" class="btn btn-secondary">
+                    <i class="fas fa-database"></i> 数据查看器
+                </a>
+            </form>
+        </section>
+
+        {% if current_stock_code %}
+        <section class="stock-info">
+            <div class="stock-code">{{ current_stock_code }}</div>
+            <div class="stock-name" id="stock-name-display">
+                {% if stock_name %}
+                    {{ stock_name }}
+                {% else %}
+                    <span class="loading"></span> 加载中...
+                {% endif %}
+            </div>
+        </section>
+        {% endif %}
+
+        <main class="main-content">
+            <section class="chart-section">
+
+                <div class="chart-container" id="kline-chart">
+                    {{ kline_chart_html | safe }}
+                </div>
+                <div class="chart-controls">
+                    <!-- 最高最低点显示控制已移除 -->
+                </div>
+            </section>
+            
+            {% if events %}
+            <aside class="events-section">
+                <div class="events-header">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h4>重要事件</h4>
+                </div>
+                
+
+                
+                <div class="events-list" id="event-list">
+                    {% for event in events %}
+                    {% set event_index = loop.index0 %}
+                    {% set events_on_same_date = events | selectattr('date', 'equalto', event.date) | list %}
+                    {% set event_position_in_date = events_on_same_date.index(event) %}
+                    <div class="event-item" 
+                         data-event-date="{{ event.date }}" 
+                         data-event-id="{% if event.id %}{{ event.id }}{% else %}{{ event.date }}_{{ event_position_in_date }}_{{ event.title }}{% endif %}"
+                         data-content-type="{{ event.content_type or '政策' }}"
+                         data-event-type="{{ event.event_type or '' }}"
+                         data-department="{{ event.department or '' }}"
+                         data-policy-level="{{ event.policy_level or '' }}"
+                         data-impact-level="{{ event.impact_level or '' }}"
+                         data-industries="{{ event.ai_industries | join(',') if event.ai_industries else '' }}">
+                        <div class="event-date">
+                            <i class="fas fa-calendar"></i> {{ event.date }}
+                        </div>
+                        <div class="event-title">{{ event.title }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </aside>
+            {% endif %}
+        </main>
+
+        <div class="data-source">
+            <i class="fas fa-info-circle"></i>
+            数据来源: TuShare & EODHD | 每日自动更新 | 专业金融数据服务
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p><i class="fas fa-copyright"></i> {{ current_year if current_year else 2024 }} 智能股票分析平台. 保留所有权利.</p>
+    </footer>
+
+    <script type="text/javascript">
+        // 将events数据存储到全局变量中，供点击事件使用
+        window.eventsData = {{ events | tojson | safe }};
+        
+
+        
+        // 生成标记点数据的统一函数
+        function generateMarkPointData(events, chartInstance) {
+            const markPoints = [];
+            
+            if (!chartInstance) {
+                return [];
+            }
+            
+            if (!events || events.length === 0) {
+                return [];
+            }
+            
+            try {
+                // 获取当前图表的数据以计算正确的星星位置
+                const option = chartInstance.getOption();
+                if (!option || !option.xAxis || !option.xAxis[0] || !option.xAxis[0].data) {
+                    return [];
+                }
+                
+                const seriesData = option.series[0].data;
+                
+                if (!seriesData || seriesData.length === 0) {
+                    return [];
+                }
+                
+                // 按日期分组事件，用于堆叠计算
+                const eventsByDate = {};
+                events.forEach(function(event) {
+                    const eventDate = event.getAttribute('data-event-date');
+                    if (eventDate) {
+                        if (!eventsByDate[eventDate]) {
+                            eventsByDate[eventDate] = [];
+                        }
+                        eventsByDate[eventDate].push(event);
+                    }
+                });
+                
+                // 为每个日期的事件生成标记点
+                Object.keys(eventsByDate).forEach(eventDate => {
+                    const dailyEvents = eventsByDate[eventDate];
+                    
+                    // 找到该日期对应的K线数据
+                    let candleHigh = null;
+                    let matchedKlineDate = null;
+                    
+                    // 将事件日期转换为时间戳进行匹配
+                    const eventTimestamp = new Date(eventDate).getTime();
+                    
+                    for (let i = 0; i < seriesData.length; i++) {
+                        const klineDate = seriesData[i][0];
+                        let klineTimestamp;
+                        
+                        if (typeof klineDate === 'number') {
+                            // K线日期是数字，可能是时间戳
+                            if (klineDate > 1000000000000) {
+                                // 毫秒时间戳
+                                klineTimestamp = klineDate;
+                            } else if (klineDate > 1000000000) {
+                                // 秒时间戳
+                                klineTimestamp = klineDate * 1000;
+                            } else {
+                                // 可能是Excel日期序列号或其他格式
+                                // Excel日期序列号：1900年1月1日为1
+                                const excelEpoch = new Date(1900, 0, 1).getTime();
+                                klineTimestamp = excelEpoch + (klineDate - 1) * 24 * 60 * 60 * 1000;
+                            }
+                        } else if (typeof klineDate === 'string') {
+                            klineTimestamp = new Date(klineDate).getTime();
+                        } else {
+                            continue;
+                        }
+                        
+                        // 检查日期是否匹配（允许1天的误差）
+                        if (Math.abs(klineTimestamp - eventTimestamp) < 24 * 60 * 60 * 1000) {
+                            candleHigh = seriesData[i][3]; // 最高价
+                            matchedKlineDate = klineDate;
+                            break;
+                        }
+                    }
+
+                    
+                    if (candleHigh !== null) {
+                        // 计算价格范围用于垂直偏移
+                        let priceRange = 0;
+                        let minPrice = Infinity;
+                        let maxPrice = -Infinity;
+                        
+                        seriesData.forEach(data => {
+                            const high = data[3];
+                            const low = data[2];
+                            if (high > maxPrice) maxPrice = high;
+                            if (low < minPrice) minPrice = low;
+                        });
+                        
+                        priceRange = maxPrice - minPrice;
+                        let verticalOffsetIncrement = priceRange * 0.01; // 1%的价格范围作为偏移
+                        
+                        if (verticalOffsetIncrement === 0) {
+                            verticalOffsetIncrement = candleHigh * 0.01 > 0 ? candleHigh * 0.01 : 0.1;
+                        }
+                        
+                        // 为该日期的每个事件创建标记点
+                        dailyEvents.forEach((item, index) => {
+                            const eventId = item.getAttribute('data-event-id');
+                            const eventTitle = item.querySelector('.event-title')?.textContent || '';
+                            
+                            // 计算堆叠的Y坐标
+                            const starYCoord = candleHigh + (verticalOffsetIncrement * (index + 1));
+                            
+                            markPoints.push({
+                                name: eventId,
+                                coord: [matchedKlineDate, starYCoord], // 使用匹配到的K线日期
+                                symbol: 'path://M8,0 L10.472,5.236 L16,6.18 L11.764,9.818 L13.056,15 L8,12.273 L2.944,15 L4.236,9.818 L0,6.18 L5.528,5.236 Z',
+                                symbolSize: 15,
+                                itemStyle: {
+                                    color: 'gold'
+                                },
+                                label: {
+                                    show: false
+                                }
+                            });
+                        });
+                    }
+                });
+                
+                return markPoints;
+                
+            } catch (error) {
+                return [];
+            }
+        }
+        
+        // 更新K线图上的标记点
+        function updateChartMarkPoints() {
+            const myChart = getEChartsInstance();
+            if (!myChart) {
+                return;
+            }
+            
+            // 获取当前可见的事件
+            const visibleEvents = document.querySelectorAll('.event-item:not([style*="display: none"])');
+            
+            // 生成标记点数据
+            const markPoints = generateMarkPointData(visibleEvents, myChart);
+            
+            // 只有在成功生成标记点时才更新图表
+            if (markPoints && markPoints.length > 0) {
+                myChart.setOption({
+                    series: [{
+                        markPoint: {
+                            data: markPoints
+                        }
+                    }]
+                });
+            }
+        }
+        
+        // 修改获取ECharts实例的方法
+        function getEChartsInstance() {
+            // 查找具有_echarts_instance_属性的div
+            const chartContainer = document.querySelector('#kline-chart div[_echarts_instance_]');
+            if (chartContainer) {
+                return echarts.getInstanceByDom(chartContainer);
+            }
+            return null;
+        }
+
+        // 等待DOM和图表加载完成
+        document.addEventListener('DOMContentLoaded', function () {
+            // 延迟执行，确保pyecharts图表已经渲染完成
+            setTimeout(function() {
+                const myChart = getEChartsInstance();
+                
+                if (!myChart) {
+                    // 如果第一次获取失败，再次尝试获取
+                    setTimeout(function() {
+                        const retryChart = getEChartsInstance();
+                        if (retryChart) {
+                            initializeChartInteractions(retryChart);
+                        }
+                    }, 2000);
+                    return;
+                }
+                
+                initializeChartInteractions(myChart);
+            }, 1000);
+        });
+
+        function initializeChartInteractions(myChart) {
+            // 获取原始配置
+            var originalOption = myChart.getOption();
+            var originalMarkPoints = null;
+            
+            if (originalOption.series && originalOption.series[0] && originalOption.series[0].markPoint) {
+                originalMarkPoints = JSON.parse(JSON.stringify(originalOption.series[0].markPoint.data));
+            } else {
+                return;
+            }
+
+            const eventListItems = document.querySelectorAll('#event-list .event-item');
+
+            eventListItems.forEach(function(item, index) {
+                // 添加点击事件，在新标签页打开事件网页并滚动K线图到对应星星
+                item.addEventListener('click', function() {
+                    const eventId = this.getAttribute('data-event-id');
+                    const eventDate = this.getAttribute('data-event-date');
+                    
+                    // 滚动K线图到对应的星星位置
+                    const chartInstance = getEChartsInstance();
+                    if (eventDate && chartInstance) {
+                        const option = chartInstance.getOption();
+                        const xAxisData = option.xAxis[0].data;
+                        const eventIndex = xAxisData.findIndex(date => date === eventDate);
+                        
+                        if (eventIndex !== -1) {
+                            const totalDataPoints = xAxisData.length;
+                            const eventPercentage = (eventIndex / (totalDataPoints - 1)) * 100;
+                            const zoomRange = 20;
+                            const startPercentage = Math.max(0, eventPercentage - zoomRange / 2);
+                            const endPercentage = Math.min(100, eventPercentage + zoomRange / 2);
+                            
+                            chartInstance.setOption({
+                                dataZoom: [{
+                                    type: 'inside',
+                                    start: startPercentage,
+                                    end: endPercentage
+                                }, {
+                                    type: 'slider',
+                                    start: startPercentage,
+                                    end: endPercentage
+                                }]
+                            });
+                        }
+                    }
+                    
+                    // 在新标签页打开事件链接
+                    if (window.eventsData && window.eventsData.length > 0) {
+                        const event = window.eventsData.find(e => e && e.id && e.id.toString() === eventId);
+                        if (event && event.source_url) {
+                            window.open(event.source_url, '_blank');
+                        }
+                    }
+                });
+                
+                // 添加鼠标悬浮样式
+                item.style.cursor = 'pointer';
+                
+                // 事件列表项鼠标悬浮事件
+                item.addEventListener('mouseenter', function () {
+                    const eventDate = this.getAttribute('data-event-date');
+                    const eventId = this.getAttribute('data-event-id');
+                    
+                    // 获取当前可见的事件
+                    const visibleEvents = document.querySelectorAll('.event-item:not([style*="display: none"])');
+                    
+                    const chartInstance = getEChartsInstance();
+                    if (!chartInstance) {
+                        return;
+                    }
+                    
+                    // 获取当前图表的标记点数据作为备份
+                    const currentOption = chartInstance.getOption();
+                    let backupMarkPoints = [];
+                    if (currentOption.series && currentOption.series[0] && currentOption.series[0].markPoint) {
+                        backupMarkPoints = JSON.parse(JSON.stringify(currentOption.series[0].markPoint.data));
+                    }
+                    
+                    // 生成标记点数据，并高亮当前悬浮的事件
+                    const markPoints = generateMarkPointData(visibleEvents, chartInstance);
+                    
+                    // 如果生成的标记点为空，使用备份数据
+                    if (markPoints.length === 0) {
+                        if (backupMarkPoints.length > 0) {
+                            const highlightedMarkPoints = backupMarkPoints.map(function(point) {
+                                if (point.name === eventId) {
+                                    return {
+                                        ...point,
+                                        itemStyle: {
+                                            color: 'red'
+                                        },
+                                        symbolSize: 20
+                                    };
+                                }
+                                return point;
+                            });
+                            
+                            chartInstance.setOption({
+                                series: [{
+                                    markPoint: {
+                                        data: highlightedMarkPoints
+                                    }
+                                }]
+                            });
+                            return;
+                        }
+                    }
+                    
+                    const highlightedMarkPoints = markPoints.map(function(point) {
+                        if (point.name === eventId) {
+                            return {
+                                ...point,
+                                itemStyle: {
+                                    color: 'red'
+                                },
+                                symbolSize: 20
+                            };
+                        }
+                        return point;
+                    });
+
+                    // 添加高亮区域
+                    let markAreaData = [];
+                    const highlighted = highlightedMarkPoints.some(point => point.name === eventId && point.itemStyle && point.itemStyle.color === 'red');
+                    if (highlighted) {
+                        markAreaData.push([
+                            {
+                                xAxis: eventDate,
+                                itemStyle: {
+                                    color: 'rgba(255, 223, 186, 0.3)'
+                                }
+                            },
+                            {
+                                xAxis: eventDate
+                            }
+                        ]);
+                    }
+                    
+                    // 自动定位K线到对应的星星位置
+                    if (eventDate && chartInstance) {
+                        const option = chartInstance.getOption();
+                        const xAxisData = option.xAxis[0].data;
+                        const eventIndex = xAxisData.findIndex(date => date === eventDate);
+                        
+                        if (eventIndex !== -1) {
+                            const totalDataPoints = xAxisData.length;
+                            const eventPercentage = (eventIndex / (totalDataPoints - 1)) * 100;
+                            const zoomRange = 20;
+                            const startPercentage = Math.max(0, eventPercentage - zoomRange / 2);
+                            const endPercentage = Math.min(100, eventPercentage + zoomRange / 2);
+                            
+                            chartInstance.setOption({
+                                dataZoom: [{
+                                    type: 'inside',
+                                    start: startPercentage,
+                                    end: endPercentage
+                                }, {
+                                    type: 'slider',
+                                    start: startPercentage,
+                                    end: endPercentage
+                                }],
+                                series: [{
+                                    markPoint: {
+                                        data: highlightedMarkPoints
+                                    },
+                                    markArea: {
+                                        silent: true,
+                                        data: markAreaData
+                                    }
+                                }]
+                            });
+                        }
+                    } else {
+                        // 如果没有日期信息，只更新星星样式
+                        chartInstance.setOption({
+                            series: [{
+                                markPoint: {
+                                    data: highlightedMarkPoints
+                                },
+                                markArea: {
+                                    silent: true,
+                                    data: markAreaData
+                                }
+                            }]
+                        });
+                    }
+                });
+
+                // 事件列表项鼠标离开事件
+                item.addEventListener('mouseleave', function () {
+                    // 恢复到原始标记点状态
+                    const chartInstance = getEChartsInstance();
+                    if (chartInstance && originalMarkPoints && originalMarkPoints.length > 0) {
+                        chartInstance.setOption({
+                            series: [{
+                                markPoint: {
+                                    data: originalMarkPoints
+                                },
+                                markArea: {
+                                    data: []
+                                }
+                            }]
+                        });
+                    } else {
+                        updateChartMarkPoints();
+                        
+                        // 清除markArea
+                        if (chartInstance) {
+                            chartInstance.setOption({
+                                series: [{
+                                    markArea: {
+                                        data: []
+                                    }
+                                }]
+                            });
+                        }
+                    }
+                });
+            });
+
+            // K线图星星悬浮交互功能
+            myChart.on('mouseover', function(params) {
+                // 检查是否是markPoint组件
+                if (params.componentType === 'markPoint' && params.data && params.data.name) {
+                    const eventId = params.data.name;
+                    
+                    // 高亮对应的事件列表项并滚动到可视区域
+                    const eventListItems = document.querySelectorAll('#event-list .event-item');
+                    eventListItems.forEach(function(item) {
+                        const itemEventId = item.getAttribute('data-event-id');
+                        if (itemEventId && eventId === itemEventId) {
+                            // 高亮该事件
+                            item.style.backgroundColor = '#ffeb3b';
+                            item.style.fontWeight = 'bold';
+                            
+                            // 检查是否在可视区域，如果不在则滚动到可视区域
+                            const eventListContainer = document.querySelector('.events-list');
+                            const itemRect = item.getBoundingClientRect();
+                            const containerRect = eventListContainer.getBoundingClientRect();
+                            
+                            // 检查元素是否在容器的可视区域内
+                            if (itemRect.top < containerRect.top || itemRect.bottom > containerRect.bottom) {
+                                // 计算需要滚动的距离
+                                const itemOffsetTop = item.offsetTop;
+                                const containerHeight = eventListContainer.clientHeight;
+                                const itemHeight = item.offsetHeight;
+                                
+                                // 计算目标滚动位置（让元素在容器中央）
+                                const targetScrollTop = itemOffsetTop - (containerHeight / 2) + (itemHeight / 2);
+                                
+                                // 平滑滚动到目标位置
+                                eventListContainer.scrollTo({
+                                    top: Math.max(0, targetScrollTop),
+                                    behavior: 'smooth'
+                                });
+                            }
+                        }
+                    });
+                    
+                    // 修改星星颜色为红色 - 使用原始标记点数据
+                    const chartInstance = getEChartsInstance();
+                    if (!chartInstance) {
+                        return;
+                    }
+                    
+                    // 直接基于原始标记点数据进行高亮处理
+                    if (originalMarkPoints && originalMarkPoints.length > 0) {
+                        const highlightedMarkPoints = originalMarkPoints.map(function(point) {
+                            if (point.name === eventId) {
+                                return {
+                                    ...point,
+                                    itemStyle: {
+                                        color: 'red'
+                                    },
+                                    symbolSize: 20
+                                };
+                            }
+                            return point;
+                        });
+                        
+                        chartInstance.setOption({
+                            series: [{
+                                markPoint: {
+                                    data: highlightedMarkPoints
+                                }
+                            }]
+                        });
+                    }
+                }
+            });
+            
+            // K线图星星鼠标离开事件
+            myChart.on('mouseout', function(params) {
+                if (params.componentType === 'markPoint') {
+                    // 恢复事件列表项的样式
+                    const eventListItems = document.querySelectorAll('#event-list .event-item');
+                    eventListItems.forEach(function(item) {
+                        item.style.backgroundColor = '';
+                        item.style.fontWeight = '';
+                    });
+                    
+                    // 恢复到原始标记点状态
+                    if (originalMarkPoints && originalMarkPoints.length > 0) {
+                        myChart.setOption({
+                            series: [{
+                                markPoint: {
+                                    data: originalMarkPoints
+                                }
+                            }]
+                        });
+                    } else {
+                        updateChartMarkPoints();
+                    }
+                }
+            });
+            
+
+        }
+    </script>
+</body>
+</html>

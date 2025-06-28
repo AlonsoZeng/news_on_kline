@@ -3737,3 +3737,271 @@ Current browser version is 137.0.7151.104 with binary path C:\Program Files\Goog
 2025-06-28 22:48:18,583 - src.core.stock_industry_analyzer - INFO - 成功保存股票 000852.SH 的行业信息
 2025-06-28 22:48:18,621 - src.core.stock_industry_analyzer - INFO - 根据行业 ['制造业', '信息技术', '金融业', '消费品', '能源'] 找到 100 条相关政策
 2025-06-28 22:48:20,998 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 22:48:20] "GET /kline/000852.SH HTTP/1.1" 200 -
+2025-06-28 23:02:03,742 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:02:03,754 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:02:03,907 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:02:04,001 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:02:05,351 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:02:05,367 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:02:40,075 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:02:40] "GET / HTTP/1.1" 200 -
+2025-06-28 23:03:04,166 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:03:04] "[32mPOST / HTTP/1.1[0m" 302 -
+2025-06-28 23:03:05,523 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000688.SH 的基本信息
+2025-06-28 23:03:05,551 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:03:05,624 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000688.SH 的详细信息
+2025-06-28 23:03:05,739 - src.core.stock_industry_analyzer - INFO - 数据库中没有股票 000688.SH 的行业信息，开始AI分析
+2025-06-28 23:03:06,243 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000688.SH 的基本信息
+2025-06-28 23:03:06,251 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:03:06,255 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000688.SH 的详细信息
+2025-06-28 23:03:16,964 - src.core.stock_industry_analyzer - INFO - 成功分析股票 000688.SH 的行业信息
+2025-06-28 23:03:17,087 - src.core.stock_industry_analyzer - INFO - 成功保存股票 000688.SH 的行业信息
+2025-06-28 23:03:18,329 - src.core.stock_industry_analyzer - INFO - 根据行业 ['金融', '指数基金', '投资', '科技创新'] 找到 100 条相关政策
+2025-06-28 23:03:39,678 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:03:39] "GET /kline/000688.SH HTTP/1.1" 200 -
+2025-06-28 23:04:55,684 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\src\\utils\\__init__.py', reloading
+2025-06-28 23:05:24,199 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:05:24,201 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:05:24,271 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:05:24,294 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:05:25,412 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:05:25,416 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:05:36,000 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:05:36] "[32mPOST / HTTP/1.1[0m" 302 -
+2025-06-28 23:05:36,215 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000993.SH 的基本信息
+2025-06-28 23:05:36,236 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:05:36,245 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000993.SH 的详细信息
+2025-06-28 23:05:36,308 - src.core.stock_industry_analyzer - INFO - 从数据库获取到股票 000993.SH 的行业信息
+2025-06-28 23:05:36,354 - src.core.stock_industry_analyzer - INFO - 根据行业 ['信息技术', '软件开发', '数据处理', '互联网服务', '科技服务'] 找到 100 条相关政策
+2025-06-28 23:05:40,795 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:05:40] "GET /kline/000993.SH HTTP/1.1" 200 -
+2025-06-28 23:06:58,933 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\src\\core\\__init__.py', reloading
+2025-06-28 23:07:07,833 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:07:07,836 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:07:07,904 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:07:07,922 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:07:08,985 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:07:08,993 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:16:33,351 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:16:33,352 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:16:33,407 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:16:33,423 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:16:34,508 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:16:34,510 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:17:00,190 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:17:00] "[32mPOST / HTTP/1.1[0m" 302 -
+2025-06-28 23:17:02,265 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000903.SH 的基本信息
+2025-06-28 23:17:02,265 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:17:02,267 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000903.SH 的详细信息
+2025-06-28 23:17:02,270 - src.core.stock_industry_analyzer - INFO - 数据库中没有股票 000903.SH 的行业信息，开始AI分析
+2025-06-28 23:17:02,470 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000903.SH 的基本信息
+2025-06-28 23:17:02,471 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:17:02,472 - src.core.stock_industry_analyzer - INFO - 成功获取股票 000903.SH 的详细信息
+2025-06-28 23:17:09,277 - src.core.stock_industry_analyzer - INFO - 成功分析股票 000903.SH 的行业信息
+2025-06-28 23:17:09,288 - src.core.stock_industry_analyzer - INFO - 成功保存股票 000903.SH 的行业信息
+2025-06-28 23:17:09,319 - src.core.stock_industry_analyzer - INFO - 根据行业 ['金融', '指数', '投资'] 找到 100 条相关政策
+2025-06-28 23:17:12,593 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:17:12] "GET /kline/000903.SH HTTP/1.1" 200 -
+2025-06-28 23:17:12,659 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:17:12] "GET /static/css/kline.css HTTP/1.1" 200 -
+2025-06-28 23:17:12,672 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:17:12] "GET /static/js/kline.js HTTP/1.1" 200 -
+2025-06-28 23:24:03,093 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:24:03,093 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:24:03,134 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:24:03,152 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:24:04,245 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:24:04,246 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:24:18,636 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:24:18,639 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:24:18,709 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:24:18,727 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:24:20,010 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:24:20,010 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:25:27,771 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:25:27,773 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:25:27,813 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:25:27,822 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:25:28,860 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:25:28,860 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:25:49,355 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:25:49] "[32mPOST / HTTP/1.1[0m" 302 -
+2025-06-28 23:25:49,717 - src.core.stock_industry_analyzer - INFO - 成功获取股票 399975.SZ 的基本信息
+2025-06-28 23:25:49,720 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:25:49,723 - src.core.stock_industry_analyzer - INFO - 成功获取股票 399975.SZ 的详细信息
+2025-06-28 23:25:49,747 - src.core.stock_industry_analyzer - INFO - 数据库中没有股票 399975.SZ 的行业信息，开始AI分析
+2025-06-28 23:25:49,837 - src.core.stock_industry_analyzer - INFO - 成功获取股票 399975.SZ 的基本信息
+2025-06-28 23:25:49,838 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:25:49,838 - src.core.stock_industry_analyzer - INFO - 成功获取股票 399975.SZ 的详细信息
+2025-06-28 23:26:12,704 - src.core.stock_industry_analyzer - INFO - 成功分析股票 399975.SZ 的行业信息
+2025-06-28 23:26:12,714 - src.core.stock_industry_analyzer - INFO - 成功保存股票 399975.SZ 的行业信息
+2025-06-28 23:26:12,752 - src.core.stock_industry_analyzer - INFO - 根据行业 ['金融业', '证券业', '资本市场服务', '金融服务'] 找到 100 条相关政策
+2025-06-28 23:26:15,950 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:26:15] "GET /kline/399975.SZ HTTP/1.1" 200 -
+2025-06-28 23:26:16,094 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:26:16] "GET /static/css/kline.css HTTP/1.1" 200 -
+2025-06-28 23:26:16,095 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:26:16] "GET /static/js/kline.js HTTP/1.1" 200 -
+2025-06-28 23:26:56,736 - src.core.stock_industry_analyzer - INFO - 成功获取股票 399975.SZ 的基本信息
+2025-06-28 23:26:56,737 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:26:56,738 - src.core.stock_industry_analyzer - INFO - 成功获取股票 399975.SZ 的详细信息
+2025-06-28 23:26:56,741 - src.core.stock_industry_analyzer - INFO - 从数据库获取到股票 399975.SZ 的行业信息
+2025-06-28 23:26:56,762 - src.core.stock_industry_analyzer - INFO - 根据行业 ['金融业', '证券业', '资本市场服务', '金融服务'] 找到 100 条相关政策
+2025-06-28 23:26:58,260 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:26:58] "GET /kline/399975.SZ HTTP/1.1" 200 -
+2025-06-28 23:26:58,306 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:26:58] "[36mGET /static/css/kline.css HTTP/1.1[0m" 304 -
+2025-06-28 23:26:58,342 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:26:58] "[36mGET /static/js/kline.js HTTP/1.1[0m" 304 -
+2025-06-28 23:27:23,832 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:27:23] "[36mGET /static/css/kline.css HTTP/1.1[0m" 304 -
+2025-06-28 23:27:59,957 - src.core.stock_industry_analyzer - INFO - 成功获取股票 399975.SZ 的基本信息
+2025-06-28 23:27:59,958 - src.core.stock_industry_analyzer - INFO - 跳过复杂网络请求，使用基础信息构建描述
+2025-06-28 23:27:59,961 - src.core.stock_industry_analyzer - INFO - 成功获取股票 399975.SZ 的详细信息
+2025-06-28 23:27:59,966 - src.core.stock_industry_analyzer - INFO - 从数据库获取到股票 399975.SZ 的行业信息
+2025-06-28 23:28:00,002 - src.core.stock_industry_analyzer - INFO - 根据行业 ['金融业', '证券业', '资本市场服务', '金融服务'] 找到 100 条相关政策
+2025-06-28 23:28:01,092 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:28:01] "GET /kline/399975.SZ HTTP/1.1" 200 -
+2025-06-28 23:28:01,195 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:28:01] "[36mGET /static/css/kline.css HTTP/1.1[0m" 304 -
+2025-06-28 23:28:01,203 - werkzeug - INFO - 192.168.2.10 - - [28/Jun/2025 23:28:01] "[36mGET /static/js/kline.js HTTP/1.1[0m" 304 -
+2025-06-28 23:28:20,341 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\scripts\\fetch_june_2025_data.py', reloading
+2025-06-28 23:28:28,596 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:28:28,596 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:28:28,667 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:28:28,688 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:28:29,746 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:28:29,748 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:30:29,062 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\database\\db_manager.py', reloading
+2025-06-28 23:30:41,918 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:30:41,931 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:30:42,314 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:30:42,352 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:30:43,916 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:30:43,938 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:31:08,083 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\database\\models.py', reloading
+2025-06-28 23:31:22,535 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:31:22,548 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:31:22,664 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:31:22,699 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:31:24,044 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:31:24,064 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:32:14,135 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\database\\operations.py', reloading
+2025-06-28 23:32:26,629 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:32:26,632 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:32:26,713 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:32:26,736 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:32:28,058 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:32:28,063 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:33:21,432 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\services\\stock_service.py', reloading
+2025-06-28 23:33:39,063 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:33:39,241 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:33:39,377 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:33:39,423 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:33:40,992 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:33:41,013 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:34:03,818 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\services\\event_service.py', reloading
+2025-06-28 23:34:22,943 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:34:22,970 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:34:23,179 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:34:23,222 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:34:24,786 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:34:24,803 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:34:49,328 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\services\\chart_service.py', reloading
+2025-06-28 23:35:03,726 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:35:03,755 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:35:04,069 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:35:04,171 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:35:06,168 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:35:06,179 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:35:32,697 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\services\\data_service.py', reloading
+2025-06-28 23:35:52,555 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:35:52,584 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:35:52,775 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:35:52,926 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:35:54,704 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:35:54,718 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:36:06,743 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\routes\\main_routes.py', reloading
+2025-06-28 23:36:20,999 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:36:21,020 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:36:21,182 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:36:21,256 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:36:22,717 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:36:22,936 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:36:50,755 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\routes\\api_routes.py', reloading
+2025-06-28 23:37:07,901 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:37:07,907 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:37:08,162 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:37:08,349 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:37:10,407 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:37:10,415 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:38:05,625 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\routes\\data_routes.py', reloading
+2025-06-28 23:38:22,575 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:38:22,641 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:38:22,746 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:38:22,773 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:38:24,364 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:38:24,377 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:39:20,425 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\app.py', reloading
+2025-06-28 23:56:24,083 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:56:24,087 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:56:24,222 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:56:24,270 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:56:25,759 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:56:25,760 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:57:57,272 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\config.py', reloading
+2025-06-28 23:58:15,462 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:58:15,465 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:58:15,548 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:58:15,569 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:58:17,046 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:58:17,050 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:58:51,604 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\database.py', reloading
+2025-06-28 23:59:14,168 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-28 23:59:14,188 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-28 23:59:14,303 - werkzeug - WARNING -  * Debugger is active!
+2025-06-28 23:59:14,333 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-28 23:59:15,564 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-28 23:59:15,566 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 23:59:55,266 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\services\\stock_service.py', reloading
+2025-06-29 00:00:12,723 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-29 00:00:12,738 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-29 00:00:12,821 - werkzeug - WARNING -  * Debugger is active!
+2025-06-29 00:00:12,845 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-29 00:00:14,104 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-29 00:00:14,169 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-29 00:00:45,233 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\services\\event_service.py', reloading
+2025-06-29 00:01:09,193 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-29 00:01:09,201 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-29 00:01:09,549 - werkzeug - WARNING -  * Debugger is active!
+2025-06-29 00:01:09,995 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-29 00:01:11,950 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-29 00:01:11,962 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-29 00:01:30,282 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\services\\chart_service.py', reloading
+2025-06-29 00:01:53,578 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-29 00:01:53,585 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-29 00:01:53,775 - werkzeug - WARNING -  * Debugger is active!
+2025-06-29 00:01:53,832 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-29 00:01:55,654 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-29 00:01:55,687 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-29 00:02:14,906 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\app_refactored.py', reloading
+2025-06-29 00:02:38,696 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-29 00:02:38,703 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-29 00:02:39,102 - werkzeug - WARNING -  * Debugger is active!
+2025-06-29 00:02:39,179 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-29 00:02:41,186 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-29 00:02:41,333 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-29 00:07:31,401 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\src\\utils\\__init__.py', reloading
+2025-06-29 00:07:40,592 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-29 00:07:40,599 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-29 00:07:40,685 - werkzeug - WARNING -  * Debugger is active!
+2025-06-29 00:07:40,702 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-29 00:07:41,839 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-29 00:07:41,839 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)

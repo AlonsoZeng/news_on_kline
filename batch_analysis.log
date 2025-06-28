@@ -1,6 +1,19 @@
-2025-06-22 11:23:39,673 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
-2025-06-22 11:23:39,998 - werkzeug - WARNING -  * Debugger is active!
-2025-06-22 11:23:40,423 - werkzeug - INFO -  * Debugger PIN: 109-372-807
-2025-06-22 11:23:42,160 - werkzeug - WARNING -  * Running on all addresses.
-   WARNING: This is a development server. Do not use it in a production deployment.
-2025-06-22 11:23:42,172 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-28 20:53:28,093 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
+2025-06-28 20:53:28,172 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 21:03:52,332 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 21:04:04,314 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 21:04:28,469 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 21:05:55,239 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 21:06:16,445 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 21:06:46,022 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 22:27:52,546 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
+2025-06-28 22:27:52,687 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 22:29:23,392 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 22:33:46,300 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
+2025-06-28 22:33:46,505 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 22:35:34,186 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
+2025-06-28 22:35:34,272 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 22:39:08,585 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 22:45:50,647 - werkzeug - INFO -  * Restarting with stat
+2025-06-28 22:47:41,502 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
+2025-06-28 22:47:41,569 - werkzeug - INFO -  * Restarting with stat

@@ -3,32 +3,39 @@
 ## 目录结构
 
 ```
-maotai_kline_app/
+news_on_kline/
 ├── app.py                    # 主应用程序（Flask Web服务）
-├── policy_data_fetcher.py    # 政策数据抓取核心模块
-├── daily_policy_update.py    # 每日政策更新脚本
-├── fetch_latest_policies.py  # 最新政策抓取脚本
 ├── requirements.txt          # 项目依赖
-├── setup_daily_task.bat     # Windows定时任务设置
-├── events.db                # SQLite数据库文件
-├── stock_updates.json       # 股票更新记录
-├── templates/               # HTML模板文件
-│   ├── kline.html
-│   └── data_viewer.html
-├── static/                  # 静态文件
-├── tests/                   # 测试代码目录
-│   ├── test_fetch.py        # 股票数据获取测试
-│   ├── test_cache.py        # 数据库缓存测试
-│   ├── test_cache_logic.py  # 缓存逻辑测试
-│   └── test_content_filter.py # 内容过滤测试
-├── tools/                   # 工具脚本目录
-│   ├── check_db.py          # 数据库检查工具
-│   ├── check_date_format.py # 日期格式检查工具
-│   ├── clean_mock_data.py   # 清理模拟数据工具
-│   └── fix_policy_dates.py  # 政策日期修正工具
-└── scripts/                 # 一次性执行脚本目录
-    ├── batch_fix_dates.py   # 批量日期修正脚本
-    └── fetch_june_2025_data.py # 特定月份数据抓取脚本
+├── .env                      # 环境变量配置
+├── .env.example              # 环境变量配置示例
+├── README.md                 # 项目说明文档
+├── data/                     # 数据存储目录
+│   ├── events.db             # 事件数据库
+│   ├── policy_data.db        # 政策数据库
+│   └── stock_updates.json    # 股票更新记录
+├── src/                      # 源代码目录
+│   ├── core/                 # 核心业务模块
+│   │   ├── ai_policy_analyzer.py      # AI政策分析器
+│   │   ├── event_manager.py           # 事件管理器
+│   │   ├── policy_data_fetcher.py     # 政策数据抓取器
+│   │   └── stock_industry_analyzer.py # 股票行业分析器
+│   ├── data/                 # 数据处理模块
+│   │   ├── daily_policy_update.py     # 每日政策更新
+│   │   ├── fetch_latest_policies.py   # 最新政策抓取
+│   │   └── init_db.py                 # 数据库初始化
+│   └── utils/                # 工具模块
+│       └── config.py                  # 配置管理
+├── templates/                # HTML模板文件
+│   ├── kline.html            # K线图页面
+│   └── data_viewer.html      # 数据查看页面
+├── static/                   # 静态文件
+│   └── images/               # 图片资源
+├── scripts/                  # 脚本目录
+│   ├── batch_fix_dates.py    # 批量日期修正
+│   └── fetch_june_2025_data.py # 特定数据抓取
+└── docs/                     # 文档目录
+    ├── 政策数据抓取使用说明.md
+    └── 日期修正工具使用说明.md
 ```
 
 ## 使用说明

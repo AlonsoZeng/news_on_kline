@@ -827,13 +827,41 @@
                     const eventDate = this.getAttribute('data-event-date');
                     const eventId = this.getAttribute('data-event-id');
                     
-                    // 获取当前可见的事件
-                    const visibleEvents = document.querySelectorAll('.event-item:not([style*="display: none"])');
-                    
+                    // 首先执行滚动K线图到对应星星的逻辑（复用click事件的逻辑）
                     const chartInstance = getEChartsInstance();
+                    if (eventDate && chartInstance) {
+                        const option = chartInstance.getOption();
+                        const xAxisData = option.xAxis[0].data;
+                        const eventIndex = xAxisData.findIndex(date => date === eventDate);
+                        
+                        if (eventIndex !== -1) {
+                            const totalDataPoints = xAxisData.length;
+                            const eventPercentage = (eventIndex / (totalDataPoints - 1)) * 100;
+                            const zoomRange = 20;
+                            const startPercentage = Math.max(0, eventPercentage - zoomRange / 2);
+                            const endPercentage = Math.min(100, eventPercentage + zoomRange / 2);
+                            
+                            chartInstance.setOption({
+                                dataZoom: [{
+                                    type: 'inside',
+                                    start: startPercentage,
+                                    end: endPercentage
+                                }, {
+                                    type: 'slider',
+                                    start: startPercentage,
+                                    end: endPercentage
+                                }]
+                            });
+                        }
+                    }
+                    
+                    // 然后处理星星高亮逻辑
                     if (!chartInstance) {
                         return;
                     }
+                    
+                    // 获取当前可见的事件
+                    const visibleEvents = document.querySelectorAll('.event-item:not([style*="display: none"])');
                     
                     // 获取当前图表的标记点数据作为备份
                     const currentOption = chartInstance.getOption();
@@ -902,54 +930,18 @@
                         ]);
                     }
                     
-                    // 自动定位K线到对应的星星位置
-                    if (eventDate && chartInstance) {
-                        const option = chartInstance.getOption();
-                        const xAxisData = option.xAxis[0].data;
-                        const eventIndex = xAxisData.findIndex(date => date === eventDate);
-                        
-                        if (eventIndex !== -1) {
-                            const totalDataPoints = xAxisData.length;
-                            const eventPercentage = (eventIndex / (totalDataPoints - 1)) * 100;
-                            const zoomRange = 20;
-                            const startPercentage = Math.max(0, eventPercentage - zoomRange / 2);
-                            const endPercentage = Math.min(100, eventPercentage + zoomRange / 2);
-                            
-                            chartInstance.setOption({
-                                dataZoom: [{
-                                    type: 'inside',
-                                    start: startPercentage,
-                                    end: endPercentage
-                                }, {
-                                    type: 'slider',
-                                    start: startPercentage,
-                                    end: endPercentage
-                                }],
-                                series: [{
-                                    markPoint: {
-                                        data: highlightedMarkPoints
-                                    },
-                                    markArea: {
-                                        silent: true,
-                                        data: markAreaData
-                                    }
-                                }]
-                            });
-                        }
-                    } else {
-                        // 如果没有日期信息，只更新星星样式
-                        chartInstance.setOption({
-                            series: [{
-                                markPoint: {
-                                    data: highlightedMarkPoints
-                                },
-                                markArea: {
-                                    silent: true,
-                                    data: markAreaData
-                                }
-                            }]
-                        });
-                    }
+                    // 更新星星样式和高亮区域
+                    chartInstance.setOption({
+                        series: [{
+                            markPoint: {
+                                data: highlightedMarkPoints
+                            },
+                            markArea: {
+                                silent: true,
+                                data: markAreaData
+                            }
+                        }]
+                    });
                 });
 
                 // 事件列表项鼠标离开事件

@@ -4,7 +4,10 @@
 专门用于抓取2025年6月政策数据的脚本
 """
 
-from policy_data_fetcher import PolicyDataFetcher
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.core.policy_data_fetcher import PolicyDataFetcher
 import logging
 
 # 配置日志

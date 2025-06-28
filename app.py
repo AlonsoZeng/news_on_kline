@@ -14,10 +14,10 @@ from urllib3.util.retry import Retry
 # --- 配置 --- #
 import json
 from eodhd import APIClient # 添加 EODHD 客户端
-from policy_data_fetcher import PolicyDataFetcher
-from ai_policy_analyzer import AIPolicyAnalyzer
-from stock_industry_analyzer import StockIndustryAnalyzer
-from event_manager import register_event_routes
+from src.core.policy_data_fetcher import PolicyDataFetcher
+from src.core.ai_policy_analyzer import AIPolicyAnalyzer
+from src.core.stock_industry_analyzer import StockIndustryAnalyzer
+from src.core.event_manager import register_event_routes
 
 # --- 配置 --- #
 # TuShare Pro Token (请替换为你自己的Token)
@@ -26,8 +26,8 @@ TUSHARE_TOKEN = os.getenv('TUSHARE_TOKEN', 'Yf6a8c4b66eaeb4e9ff4fdcd8575e1f7acf8
 if TUSHARE_TOKEN == 'YOUR_TUSHARE_TOKEN' or not TUSHARE_TOKEN:
     print("警告：请设置您的TuShare Token (环境变量 TUSHARE_TOKEN 或直接修改代码)，否则无法获取数据。")
 
-DB_FILE = 'stock_updates.json' # 用于记录各股票更新日期的JSON文件
-EVENTS_DB_FILE = 'events.db' # SQLite数据库文件，用于存储事件数据
+DB_FILE = 'data/stock_updates.json' # 用于记录各股票更新日期的JSON文件
+EVENTS_DB_FILE = 'data/events.db' # SQLite数据库文件，用于存储事件数据
 
 # EODHD API Token (请替换为你自己的Token或使用 'demo')
 # 建议将Token存储在环境变量中
@@ -36,7 +36,7 @@ if EODHD_API_TOKEN == 'YOUR_EODHD_API_TOKEN' or not EODHD_API_TOKEN:
     print("警告：请设置您的EODHD API Token (环境变量 EODHD_API_TOKEN 或直接修改代码)，否则可能无法获取宏观事件数据或受到限制。使用 'demo' token 功能受限。")
 
 # 硅基流动 AI API Token - 使用配置管理
-from config import init_config, Config
+from src.utils.config import init_config, Config
 
 # 初始化配置
 config_initialized = init_config()

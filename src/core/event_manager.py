@@ -12,59 +12,69 @@ from datetime import datetime
 from flask import jsonify, request
 from werkzeug.utils import secure_filename
 import os
+from contextlib import contextmanager
 
 class EventManager:
     def __init__(self, db_path='events.db'):
         self.db_path = db_path
     
+    @contextmanager
     def get_db_connection(self):
-        """获取数据库连接"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+        """获取数据库连接的上下文管理器"""
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            yield conn
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            raise e
+        finally:
+            if conn:
+                conn.close()
     
     def create_single_event(self, event_data):
         """创建单个事件"""
         try:
-            conn = self.get_db_connection()
-            cursor = conn.cursor()
-            
-            # 插入到policy_events表
-            cursor.execute("""
-                INSERT INTO policy_events (
-                    date, title, content_type, event_type, department, 
-                    policy_level, impact_level, industries, content, 
-                    ai_analysis, source_url, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                event_data['date'],
-                event_data['title'],
-                event_data.get('content_type', ''),
-                event_data.get('event_type', ''),
-                event_data.get('department', ''),
-                event_data.get('policy_level', ''),
-                event_data.get('impact_level', ''),
-                event_data.get('industries', ''),
-                event_data.get('content', ''),
-                event_data.get('ai_analysis', ''),
-                event_data.get('source_url', ''),
-                datetime.now().isoformat()
-            ))
-            
-            # 插入到events表（用于K线图显示）
-            cursor.execute("""
-                INSERT INTO events (date, title, event_type, created_at)
-                VALUES (?, ?, ?, ?)
-            """, (
-                event_data['date'],
-                event_data['title'],
-                event_data.get('event_type', ''),
-                datetime.now().isoformat()
-            ))
-            
-            conn.commit()
-            conn.close()
-            
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # 插入到policy_events表
+                cursor.execute("""
+                    INSERT INTO policy_events (
+                        date, title, content_type, event_type, department, 
+                        policy_level, impact_level, industries, content, 
+                        ai_analysis, source_url, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    event_data['date'],
+                    event_data['title'],
+                    event_data.get('content_type', ''),
+                    event_data.get('event_type', ''),
+                    event_data.get('department', ''),
+                    event_data.get('policy_level', ''),
+                    event_data.get('impact_level', ''),
+                    event_data.get('industries', ''),
+                    event_data.get('content', ''),
+                    event_data.get('ai_analysis', ''),
+                    event_data.get('source_url', ''),
+                    datetime.now().isoformat()
+                ))
+                
+                # 插入到events表（用于K线图显示）
+                cursor.execute("""
+                    INSERT INTO events (date, title, event_type, created_at)
+                    VALUES (?, ?, ?, ?)
+                """, (
+                    event_data['date'],
+                    event_data['title'],
+                    event_data.get('event_type', ''),
+                    datetime.now().isoformat()
+                ))
+                
+                conn.commit()
+                
             return {'success': True, 'message': '事件创建成功'}
             
         except Exception as e:
@@ -76,62 +86,61 @@ class EventManager:
             # 解析CSV内容
             csv_reader = csv.DictReader(io.StringIO(csv_content))
             
-            conn = self.get_db_connection()
-            cursor = conn.cursor()
-            
-            success_count = 0
-            error_count = 0
-            errors = []
-            
-            for row_num, row in enumerate(csv_reader, start=2):  # 从第2行开始（第1行是标题）
-                try:
-                    # 验证必填字段
-                    if not row.get('date') or not row.get('title'):
-                        errors.append(f'第{row_num}行: 日期和标题为必填字段')
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                success_count = 0
+                error_count = 0
+                errors = []
+                
+                for row_num, row in enumerate(csv_reader, start=2):  # 从第2行开始（第1行是标题）
+                    try:
+                        # 验证必填字段
+                        if not row.get('date') or not row.get('title'):
+                            errors.append(f'第{row_num}行: 日期和标题为必填字段')
+                            error_count += 1
+                            continue
+                        
+                        # 插入到policy_events表
+                        cursor.execute("""
+                            INSERT INTO policy_events (
+                                date, title, content_type, event_type, department, 
+                                policy_level, impact_level, industries, content, 
+                                ai_analysis, source_url, created_at
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """, (
+                            row['date'],
+                            row['title'],
+                            row.get('content_type', ''),
+                            row.get('event_type', ''),
+                            row.get('department', ''),
+                            row.get('policy_level', ''),
+                            row.get('impact_level', ''),
+                            row.get('industries', ''),
+                            row.get('content', ''),
+                            row.get('ai_analysis', ''),
+                            row.get('source_url', ''),
+                            datetime.now().isoformat()
+                        ))
+                        
+                        # 插入到events表
+                        cursor.execute("""
+                            INSERT INTO events (date, title, event_type, created_at)
+                            VALUES (?, ?, ?, ?)
+                        """, (
+                            row['date'],
+                            row['title'],
+                            row.get('event_type', ''),
+                            datetime.now().isoformat()
+                        ))
+                        
+                        success_count += 1
+                        
+                    except Exception as e:
+                        errors.append(f'第{row_num}行: {str(e)}')
                         error_count += 1
-                        continue
-                    
-                    # 插入到policy_events表
-                    cursor.execute("""
-                        INSERT INTO policy_events (
-                            date, title, content_type, event_type, department, 
-                            policy_level, impact_level, industries, content, 
-                            ai_analysis, source_url, created_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """, (
-                        row['date'],
-                        row['title'],
-                        row.get('content_type', ''),
-                        row.get('event_type', ''),
-                        row.get('department', ''),
-                        row.get('policy_level', ''),
-                        row.get('impact_level', ''),
-                        row.get('industries', ''),
-                        row.get('content', ''),
-                        row.get('ai_analysis', ''),
-                        row.get('source_url', ''),
-                        datetime.now().isoformat()
-                    ))
-                    
-                    # 插入到events表
-                    cursor.execute("""
-                        INSERT INTO events (date, title, event_type, created_at)
-                        VALUES (?, ?, ?, ?)
-                    """, (
-                        row['date'],
-                        row['title'],
-                        row.get('event_type', ''),
-                        datetime.now().isoformat()
-                    ))
-                    
-                    success_count += 1
-                    
-                except Exception as e:
-                    errors.append(f'第{row_num}行: {str(e)}')
-                    error_count += 1
-            
-            conn.commit()
-            conn.close()
+                
+                conn.commit()
             
             return {
                 'success': True,
@@ -147,22 +156,21 @@ class EventManager:
     def delete_event(self, event_id):
         """删除事件"""
         try:
-            conn = self.get_db_connection()
-            cursor = conn.cursor()
-            
-            # 从policy_events表删除
-            cursor.execute("DELETE FROM policy_events WHERE id = ?", (event_id,))
-            
-            # 从events表删除（通过标题匹配）
-            cursor.execute("""
-                DELETE FROM events WHERE title IN (
-                    SELECT title FROM policy_events WHERE id = ?
-                )
-            """, (event_id,))
-            
-            conn.commit()
-            conn.close()
-            
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # 从policy_events表删除
+                cursor.execute("DELETE FROM policy_events WHERE id = ?", (event_id,))
+                
+                # 从events表删除（通过标题匹配）
+                cursor.execute("""
+                    DELETE FROM events WHERE title IN (
+                        SELECT title FROM policy_events WHERE id = ?
+                    )
+                """, (event_id,))
+                
+                conn.commit()
+                
             return {'success': True, 'message': '事件删除成功'}
             
         except Exception as e:

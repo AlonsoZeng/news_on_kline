@@ -10,8 +10,7 @@ import sqlite3
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-
-# --- 配置 --- #
+from contextlib import contextmanager
 import json
 from eodhd import APIClient # 添加 EODHD 客户端
 from src.core.policy_data_fetcher import PolicyDataFetcher
@@ -19,36 +18,72 @@ from src.core.ai_policy_analyzer import AIPolicyAnalyzer
 from src.core.stock_industry_analyzer import StockIndustryAnalyzer
 from src.core.event_manager import register_event_routes
 
-# --- 配置 --- #
-# TuShare Pro Token (请替换为你自己的Token)
-# 建议将Token存储在环境变量中，而不是硬编码
-TUSHARE_TOKEN = os.getenv('TUSHARE_TOKEN', 'Yf6a8c4b66eaeb4e9ff4fdcd8575e1f7acf8c268079e132247f1af168')  # 请替换
-if TUSHARE_TOKEN == 'YOUR_TUSHARE_TOKEN' or not TUSHARE_TOKEN:
-    print("警告：请设置您的TuShare Token (环境变量 TUSHARE_TOKEN 或直接修改代码)，否则无法获取数据。")
-
-DB_FILE = 'data/stock_updates.json' # 用于记录各股票更新日期的JSON文件
-EVENTS_DB_FILE = 'data/events.db' # SQLite数据库文件，用于存储事件数据
-
-# EODHD API Token (请替换为你自己的Token或使用 'demo')
-# 建议将Token存储在环境变量中
-EODHD_API_TOKEN = os.getenv('EODHD_API_TOKEN', 'demo') # 使用 'demo' 作为默认值
-if EODHD_API_TOKEN == 'YOUR_EODHD_API_TOKEN' or not EODHD_API_TOKEN:
-    print("警告：请设置您的EODHD API Token (环境变量 EODHD_API_TOKEN 或直接修改代码)，否则可能无法获取宏观事件数据或受到限制。使用 'demo' token 功能受限。")
-
-# 硅基流动 AI API Token - 使用配置管理
-from src.utils.config import init_config, Config
-
-# 初始化配置
-config_initialized = init_config()
-SILICONFLOW_API_KEY = None
-if config_initialized:
+# --- 数据库上下文管理器 --- #
+@contextmanager
+def get_db_connection(db_file=None):
+    """数据库连接上下文管理器"""
+    if db_file is None:
+        db_file = 'data/events.db'
+    
+    conn = None
     try:
-        SILICONFLOW_API_KEY = Config.get_api_key()
-    except ValueError:
-        print("警告：硅基流动 API Key 未正确配置，AI政策分析功能将不可用。")
-        print("请设置 SILICONFLOW_API_KEY 环境变量或创建 .env 文件。")
-else:
-    print("警告：配置初始化失败，AI政策分析功能将不可用。")
+        conn = sqlite3.connect(db_file)
+        yield conn
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise e
+    finally:
+        if conn:
+            conn.close()
+
+# --- 配置管理 --- #
+class AppConfig:
+    """应用配置管理类"""
+    
+    def __init__(self):
+        self.TUSHARE_TOKEN = self._get_tushare_token()
+        self.DB_FILE = 'data/stock_updates.json'
+        self.EVENTS_DB_FILE = 'data/events.db'
+        self.EODHD_API_TOKEN = self._get_eodhd_token()
+        self.SILICONFLOW_API_KEY = self._get_siliconflow_key()
+        
+    def _get_tushare_token(self):
+        """获取TuShare Token"""
+        token = os.getenv('TUSHARE_TOKEN', 'Yf6a8c4b66eaeb4e9ff4fdcd8575e1f7acf8c268079e132247f1af168')
+        if token == 'YOUR_TUSHARE_TOKEN' or not token:
+            print("警告：请设置您的TuShare Token (环境变量 TUSHARE_TOKEN)，否则无法获取数据。")
+        return token
+    
+    def _get_eodhd_token(self):
+        """获取EODHD API Token"""
+        token = os.getenv('EODHD_API_TOKEN', 'demo')
+        if token == 'YOUR_EODHD_API_TOKEN' or not token:
+            print("警告：请设置您的EODHD API Token (环境变量 EODHD_API_TOKEN)，否则可能无法获取宏观事件数据。")
+        return token
+    
+    def _get_siliconflow_key(self):
+        """获取硅基流动 AI API Key"""
+        from src.utils.config import init_config, Config
+        
+        config_initialized = init_config()
+        if config_initialized:
+            try:
+                return Config.get_api_key()
+            except ValueError:
+                print("警告：硅基流动 API Key 未正确配置，AI政策分析功能将不可用。")
+                print("请设置 SILICONFLOW_API_KEY 环境变量或创建 .env 文件。")
+        else:
+            print("警告：配置初始化失败，AI分析功能将不可用。")
+        return None
+
+# --- 配置初始化 --- #
+config = AppConfig()
+TUSHARE_TOKEN = config.TUSHARE_TOKEN
+DB_FILE = config.DB_FILE
+EVENTS_DB_FILE = config.EVENTS_DB_FILE
+EODHD_API_TOKEN = config.EODHD_API_TOKEN
+SILICONFLOW_API_KEY = config.SILICONFLOW_API_KEY
 
 # --- Flask 应用初始化 --- #
 app = Flask(__name__)
@@ -71,192 +106,184 @@ else:
 # --- 数据库初始化 --- #
 def init_events_database():
     """初始化事件数据库，创建表结构"""
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
-    # 创建事件表
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TEXT NOT NULL,
-        title TEXT NOT NULL,
-        event_type TEXT DEFAULT 'custom',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    ''')
-    
-    # 创建股票K线数据表
-    cursor.execute('''
-    CREATE TABLE IF NOT EXISTS stock_kline (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        stock_code TEXT NOT NULL,
-        date TEXT NOT NULL,
-        open REAL NOT NULL,
-        close REAL NOT NULL,
-        high REAL NOT NULL,
-        low REAL NOT NULL,
-        volume INTEGER NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(stock_code, date)
-    )
-    ''')
-    
-    # 创建索引以提高查询性能
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_date ON stock_kline(stock_code, date)')
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_updated ON stock_kline(stock_code, updated_at)')
-    
-    conn.commit()
-    conn.close()
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
+        
+        # 创建事件表
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            title TEXT NOT NULL,
+            event_type TEXT DEFAULT 'custom',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+        
+        # 创建股票K线数据表
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS stock_kline (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            stock_code TEXT NOT NULL,
+            date TEXT NOT NULL,
+            open REAL NOT NULL,
+            close REAL NOT NULL,
+            high REAL NOT NULL,
+            low REAL NOT NULL,
+            volume INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(stock_code, date)
+        )
+        ''')
+        
+        # 创建索引以提高查询性能
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_date ON stock_kline(stock_code, date)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_updated ON stock_kline(stock_code, updated_at)')
+        
+        conn.commit()
     print(f"事件数据库已初始化: {EVENTS_DB_FILE}")
 
 def get_events_from_db():
     """从数据库获取事件数据（优先使用政策数据表）"""
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
-    # 首先尝试从新的政策数据表获取
-    try:
-        cursor.execute("""
-            SELECT date, title, event_type, department, policy_level, impact_level 
-            FROM policy_events 
-            ORDER BY date DESC
-        """)
-        events = cursor.fetchall()
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
         
-        if events:
-            # 转换为字典格式
-            events_list = []
-            for event in events:
-                events_list.append({
-                    'date': event[0],
-                    'title': event[1],
-                    'event_type': event[2],
-                    'department': event[3] if len(event) > 3 else '',
-                    'policy_level': event[4] if len(event) > 4 else '',
-                    'impact_level': event[5] if len(event) > 5 else ''
-                })
+        # 首先尝试从新的政策数据表获取
+        try:
+            cursor.execute("""
+                SELECT date, title, event_type, department, policy_level, impact_level 
+                FROM policy_events 
+                ORDER BY date DESC
+            """)
+            events = cursor.fetchall()
             
-            conn.close()
-            return events_list
-    except sqlite3.OperationalError:
-        # 如果政策数据表不存在，回退到旧表
-        pass
-    
-    # 回退到旧的events表
-    cursor.execute('SELECT date, title, event_type FROM events ORDER BY date')
-    rows = cursor.fetchall()
-    
-    events = []
-    for row in rows:
-        events.append({
-            'date': row[0],
-            'title': row[1],
-            'event_type': row[2],
-            'department': '',
-            'policy_level': '',
-            'impact_level': ''
-        })
-    
-    conn.close()
-    return events
+            if events:
+                # 转换为字典格式
+                events_list = []
+                for event in events:
+                    events_list.append({
+                        'date': event[0],
+                        'title': event[1],
+                        'event_type': event[2],
+                        'department': event[3] if len(event) > 3 else '',
+                        'policy_level': event[4] if len(event) > 4 else '',
+                        'impact_level': event[5] if len(event) > 5 else ''
+                    })
+                
+                return events_list
+        except sqlite3.OperationalError:
+            # 如果政策数据表不存在，回退到旧表
+            pass
+        
+        # 回退到旧的events表
+        cursor.execute('SELECT date, title, event_type FROM events ORDER BY date')
+        rows = cursor.fetchall()
+        
+        events = []
+        for row in rows:
+            events.append({
+                'date': row[0],
+                'title': row[1],
+                'event_type': row[2],
+                'department': '',
+                'policy_level': '',
+                'impact_level': ''
+            })
+        
+        return events
 
 def get_stock_kline_from_db(stock_code, start_date=None):
     """从数据库获取股票K线数据"""
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
-    if start_date:
-        cursor.execute('''
-            SELECT date, open, close, high, low, volume 
-            FROM stock_kline 
-            WHERE stock_code = ? AND date >= ? 
-            ORDER BY date
-        ''', (stock_code, start_date))
-    else:
-        cursor.execute('''
-            SELECT date, open, close, high, low, volume 
-            FROM stock_kline 
-            WHERE stock_code = ? 
-            ORDER BY date
-        ''', (stock_code,))
-    
-    rows = cursor.fetchall()
-    conn.close()
-    
-    if not rows:
-        return pd.DataFrame()
-    
-    # 转换为DataFrame
-    df = pd.DataFrame(rows, columns=['date', 'open', 'close', 'high', 'low', 'volume'])
-    df['date'] = pd.to_datetime(df['date'])
-    return df
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
+        
+        if start_date:
+            cursor.execute('''
+                SELECT date, open, close, high, low, volume 
+                FROM stock_kline 
+                WHERE stock_code = ? AND date >= ? 
+                ORDER BY date
+            ''', (stock_code, start_date))
+        else:
+            cursor.execute('''
+                SELECT date, open, close, high, low, volume 
+                FROM stock_kline 
+                WHERE stock_code = ? 
+                ORDER BY date
+            ''', (stock_code,))
+        
+        rows = cursor.fetchall()
+        
+        if not rows:
+            return pd.DataFrame()
+        
+        # 转换为DataFrame
+        df = pd.DataFrame(rows, columns=['date', 'open', 'close', 'high', 'low', 'volume'])
+        df['date'] = pd.to_datetime(df['date'])
+        return df
 
 def get_latest_stock_date_from_db(stock_code):
     """获取数据库中指定股票的最新日期"""
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
-    cursor.execute('''
-        SELECT MAX(date) FROM stock_kline WHERE stock_code = ?
-    ''', (stock_code,))
-    
-    result = cursor.fetchone()
-    conn.close()
-    
-    return result[0] if result and result[0] else None
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT MAX(date) FROM stock_kline WHERE stock_code = ?
+        ''', (stock_code,))
+        
+        result = cursor.fetchone()
+        
+        return result[0] if result and result[0] else None
 
 def insert_event_to_db(date, title, event_type='custom'):
     """向数据库插入单个事件"""
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
-    cursor.execute('INSERT INTO events (date, title, event_type) VALUES (?, ?, ?)', 
-                   (date, title, event_type))
-    
-    conn.commit()
-    conn.close()
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
+        
+        cursor.execute('INSERT INTO events (date, title, event_type) VALUES (?, ?, ?)', 
+                       (date, title, event_type))
+        
+        conn.commit()
 
 def save_stock_kline_to_db(stock_code, df_kline, include_non_trading_days=False):
     """将股票K线数据保存到数据库"""
     if df_kline.empty:
         return
     
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
     # 如果需要包含非交易日，先填充数据
     if include_non_trading_days:
         df_kline = fill_non_trading_days(df_kline)
     
-    # 使用INSERT OR REPLACE来处理重复数据
-    for _, row in df_kline.iterrows():
-        cursor.execute('''
-            INSERT OR REPLACE INTO stock_kline 
-            (stock_code, date, open, close, high, low, volume, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ''', (
-            stock_code,
-            row['date'].strftime('%Y-%m-%d'),
-            float(row['open']),
-            float(row['close']),
-            float(row['high']),
-            float(row['low']),
-            int(row['volume'])
-        ))
-    
-    conn.commit()
-    conn.close()
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
+        
+        # 使用INSERT OR REPLACE来处理重复数据
+        for _, row in df_kline.iterrows():
+            cursor.execute('''
+                INSERT OR REPLACE INTO stock_kline 
+                (stock_code, date, open, close, high, low, volume, updated_at) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            ''', (
+                stock_code,
+                row['date'].strftime('%Y-%m-%d'),
+                float(row['open']),
+                float(row['close']),
+                float(row['high']),
+                float(row['low']),
+                int(row['volume'])
+            ))
+        
+        conn.commit()
     print(f"已保存 {len(df_kline)} 条 {stock_code} 的K线数据到数据库")
 
 def migrate_mock_events_to_db():
     """将模拟事件数据迁移到数据库（仅在首次运行时执行）"""
     # 检查数据库中是否已有数据
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute('SELECT COUNT(*) FROM events')
-    count = cursor.fetchone()[0]
-    conn.close()
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) FROM events')
+        count = cursor.fetchone()[0]
     
     if count > 0:
         print(f"数据库中已有 {count} 条事件记录，跳过迁移")
@@ -531,31 +558,30 @@ def check_and_fill_missing_non_trading_days(stock_code):
     filled_data = fill_non_trading_days(existing_data)
     
     # 保存补全后的数据到数据库
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
-    # 只保存新增的非交易日数据
-    for date in missing_dates:
-        # 找到该日期对应的数据
-        date_data = filled_data[filled_data['date'].dt.date == date.date()]
-        if not date_data.empty:
-            row = date_data.iloc[0]
-            cursor.execute('''
-                INSERT OR REPLACE INTO stock_kline 
-                (stock_code, date, open, close, high, low, volume, updated_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            ''', (
-                stock_code,
-                row['date'].strftime('%Y-%m-%d'),
-                float(row['open']),
-                float(row['close']),
-                float(row['high']),
-                float(row['low']),
-                int(row['volume'])
-            ))
-    
-    conn.commit()
-    conn.close()
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
+        
+        # 只保存新增的非交易日数据
+        for date in missing_dates:
+            # 找到该日期对应的数据
+            date_data = filled_data[filled_data['date'].dt.date == date.date()]
+            if not date_data.empty:
+                row = date_data.iloc[0]
+                cursor.execute('''
+                    INSERT OR REPLACE INTO stock_kline 
+                    (stock_code, date, open, close, high, low, volume, updated_at) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ''', (
+                    stock_code,
+                    row['date'].strftime('%Y-%m-%d'),
+                    float(row['open']),
+                    float(row['close']),
+                    float(row['high']),
+                    float(row['low']),
+                    int(row['volume'])
+                ))
+        
+        conn.commit()
     print(f"已为 {stock_code} 补全 {len(missing_dates)} 个非交易日的占位蜡烛")
 
 # --- Mock Event Data Generation (for testing) --- #
@@ -723,174 +749,170 @@ def create_kline_chart(df_kline, stock_display_name, economic_events=None, custo
 # --- 数据分析函数 --- #
 def get_data_statistics():
     """获取数据库统计信息（优先使用政策数据表）"""
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
-    # 首先尝试从新的政策数据表获取统计
-    try:
-        cursor.execute('SELECT COUNT(*) FROM policy_events')
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
+        
+        # 首先尝试从新的政策数据表获取统计
+        try:
+            cursor.execute('SELECT COUNT(*) FROM policy_events')
+            total_events = cursor.fetchone()[0]
+            
+            if total_events > 0:
+                cursor.execute('SELECT COUNT(DISTINCT event_type) FROM policy_events')
+                event_types_count = cursor.fetchone()[0]
+                
+                cursor.execute('SELECT MIN(date), MAX(date) FROM policy_events')
+                date_range = cursor.fetchone()
+                
+                # 计算日期跨度
+                date_range_days = 0
+                latest_event_date = '无数据'
+                if date_range[0] and date_range[1]:
+                    from datetime import datetime
+                    start_date = datetime.strptime(date_range[0], '%Y-%m-%d')
+                    end_date = datetime.strptime(date_range[1], '%Y-%m-%d')
+                    date_range_days = (end_date - start_date).days
+                    latest_event_date = date_range[1]
+                
+                # 事件类型统计
+                cursor.execute('SELECT event_type, COUNT(*) as count FROM policy_events GROUP BY event_type ORDER BY count DESC')
+                type_stats_raw = cursor.fetchall()
+                
+                event_type_stats = []
+                for event_type, count in type_stats_raw:
+                    cursor.execute('SELECT MAX(date) FROM policy_events WHERE event_type = ?', (event_type,))
+                    latest_date = cursor.fetchone()[0]
+                    
+                    type_display = {
+                        'custom': '自定义',
+                        'policy': '政策',
+                        'economic': '经济'
+                    }.get(event_type, event_type)
+                    
+                    event_type_stats.append({
+                        'type': event_type,
+                        'type_display': type_display,
+                        'count': count,
+                        'percentage': (count / total_events * 100) if total_events > 0 else 0,
+                        'latest_date': latest_date or '无'
+                    })
+                
+                # 数据质量分析
+                cursor.execute('SELECT COUNT(DISTINCT date) FROM policy_events')
+                unique_dates = cursor.fetchone()[0]
+                
+                cursor.execute('SELECT date, COUNT(*) as daily_count FROM policy_events GROUP BY date ORDER BY daily_count DESC LIMIT 1')
+                max_events_result = cursor.fetchone()
+                max_events_per_day = max_events_result[1] if max_events_result else 0
+                
+                # 计算月均事件数
+                if date_range[0] and date_range[1]:
+                    months_span = max(1, date_range_days / 30)
+                    avg_events_per_month = round(total_events / months_span, 1)
+                else:
+                    avg_events_per_month = 0
+                
+                # 统计pa.industries为空的事件数量
+                cursor.execute('''
+                    SELECT COUNT(*) FROM policy_events pe 
+                    LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id 
+                    WHERE pa.industries IS NULL OR pa.industries = '' OR pa.industries = '[]'
+                ''')
+                empty_industries_count = cursor.fetchone()[0]
+                
+                data_quality = {
+                    'completeness': 100 if total_events > 0 else 0,  # 简化的完整性指标
+                    'avg_events_per_month': avg_events_per_month,
+                    'unique_dates': unique_dates,
+                    'max_events_per_day': max_events_per_day,
+                    'empty_industries_count': empty_industries_count
+                }
+                
+                return {
+                    'total_events': total_events,
+                    'event_types_count': event_types_count,
+                    'date_range_days': date_range_days,
+                    'latest_event_date': latest_event_date,
+                    'event_type_stats': event_type_stats,
+                    'data_quality': data_quality
+                }
+        except sqlite3.OperationalError:
+            # 如果政策数据表不存在，回退到旧表
+            pass
+        
+        # 回退到旧的events表统计
+        cursor.execute('SELECT COUNT(*) FROM events')
         total_events = cursor.fetchone()[0]
         
-        if total_events > 0:
-            cursor.execute('SELECT COUNT(DISTINCT event_type) FROM policy_events')
-            event_types_count = cursor.fetchone()[0]
-            
-            cursor.execute('SELECT MIN(date), MAX(date) FROM policy_events')
-            date_range = cursor.fetchone()
-            
-            # 计算日期跨度
-            date_range_days = 0
-            latest_event_date = '无数据'
-            if date_range[0] and date_range[1]:
-                from datetime import datetime
-                start_date = datetime.strptime(date_range[0], '%Y-%m-%d')
-                end_date = datetime.strptime(date_range[1], '%Y-%m-%d')
-                date_range_days = (end_date - start_date).days
-                latest_event_date = date_range[1]
-            
-            # 事件类型统计
-            cursor.execute('SELECT event_type, COUNT(*) as count FROM policy_events GROUP BY event_type ORDER BY count DESC')
-            type_stats_raw = cursor.fetchall()
-            
-            event_type_stats = []
-            for event_type, count in type_stats_raw:
-                cursor.execute('SELECT MAX(date) FROM policy_events WHERE event_type = ?', (event_type,))
-                latest_date = cursor.fetchone()[0]
-                
-                type_display = {
-                    'custom': '自定义',
-                    'policy': '政策',
-                    'economic': '经济'
-                }.get(event_type, event_type)
-                
-                event_type_stats.append({
-                    'type': event_type,
-                    'type_display': type_display,
-                    'count': count,
-                    'percentage': (count / total_events * 100) if total_events > 0 else 0,
-                    'latest_date': latest_date or '无'
-                })
-            
-            # 数据质量分析
-            cursor.execute('SELECT COUNT(DISTINCT date) FROM policy_events')
-            unique_dates = cursor.fetchone()[0]
-            
-            cursor.execute('SELECT date, COUNT(*) as daily_count FROM policy_events GROUP BY date ORDER BY daily_count DESC LIMIT 1')
-            max_events_result = cursor.fetchone()
-            max_events_per_day = max_events_result[1] if max_events_result else 0
-            
-            # 计算月均事件数
-            if date_range[0] and date_range[1]:
-                months_span = max(1, date_range_days / 30)
-                avg_events_per_month = round(total_events / months_span, 1)
-            else:
-                avg_events_per_month = 0
-            
-            # 统计pa.industries为空的事件数量
-            cursor.execute('''
-                SELECT COUNT(*) FROM policy_events pe 
-                LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id 
-                WHERE pa.industries IS NULL OR pa.industries = '' OR pa.industries = '[]'
-            ''')
-            empty_industries_count = cursor.fetchone()[0]
-            
-            data_quality = {
-                'completeness': 100 if total_events > 0 else 0,  # 简化的完整性指标
-                'avg_events_per_month': avg_events_per_month,
-                'unique_dates': unique_dates,
-                'max_events_per_day': max_events_per_day,
-                'empty_industries_count': empty_industries_count
-            }
-            
-            conn.close()
-            
-            return {
-                'total_events': total_events,
-                'event_types_count': event_types_count,
-                'date_range_days': date_range_days,
-                'latest_event_date': latest_event_date,
-                'event_type_stats': event_type_stats,
-                'data_quality': data_quality
-            }
-    except sqlite3.OperationalError:
-        # 如果政策数据表不存在，回退到旧表
-        pass
-    
-    # 回退到旧的events表统计
-    cursor.execute('SELECT COUNT(*) FROM events')
-    total_events = cursor.fetchone()[0]
-    
-    cursor.execute('SELECT COUNT(DISTINCT event_type) FROM events')
-    event_types_count = cursor.fetchone()[0]
-    
-    cursor.execute('SELECT MIN(date), MAX(date) FROM events')
-    date_range = cursor.fetchone()
-    
-    # 计算日期跨度
-    date_range_days = 0
-    latest_event_date = '无数据'
-    if date_range[0] and date_range[1]:
-        from datetime import datetime
-        start_date = datetime.strptime(date_range[0], '%Y-%m-%d')
-        end_date = datetime.strptime(date_range[1], '%Y-%m-%d')
-        date_range_days = (end_date - start_date).days
-        latest_event_date = date_range[1]
-    
-    # 事件类型统计
-    cursor.execute('SELECT event_type, COUNT(*) as count FROM events GROUP BY event_type ORDER BY count DESC')
-    type_stats_raw = cursor.fetchall()
-    
-    event_type_stats = []
-    for event_type, count in type_stats_raw:
-        cursor.execute('SELECT MAX(date) FROM events WHERE event_type = ?', (event_type,))
-        latest_date = cursor.fetchone()[0]
+        cursor.execute('SELECT COUNT(DISTINCT event_type) FROM events')
+        event_types_count = cursor.fetchone()[0]
+         
+        cursor.execute('SELECT MIN(date), MAX(date) FROM events')
+        date_range = cursor.fetchone()
         
-        type_display = {
-            'custom': '自定义',
-            'policy': '政策',
-            'economic': '经济'
-        }.get(event_type, event_type)
+        # 计算日期跨度
+        date_range_days = 0
+        latest_event_date = '无数据'
+        if date_range[0] and date_range[1]:
+            from datetime import datetime
+            start_date = datetime.strptime(date_range[0], '%Y-%m-%d')
+            end_date = datetime.strptime(date_range[1], '%Y-%m-%d')
+            date_range_days = (end_date - start_date).days
+            latest_event_date = date_range[1]
         
-        event_type_stats.append({
-            'type': event_type,
-            'type_display': type_display,
-            'count': count,
-            'percentage': (count / total_events * 100) if total_events > 0 else 0,
-            'latest_date': latest_date or '无'
-        })
-    
-    # 数据质量分析
-    cursor.execute('SELECT COUNT(DISTINCT date) FROM events')
-    unique_dates = cursor.fetchone()[0]
-    
-    cursor.execute('SELECT date, COUNT(*) as daily_count FROM events GROUP BY date ORDER BY daily_count DESC LIMIT 1')
-    max_events_result = cursor.fetchone()
-    max_events_per_day = max_events_result[1] if max_events_result else 0
-    
-    # 计算月均事件数
-    if date_range[0] and date_range[1]:
-        months_span = max(1, date_range_days / 30)
-        avg_events_per_month = round(total_events / months_span, 1)
-    else:
-        avg_events_per_month = 0
-    
-    data_quality = {
-        'completeness': 100 if total_events > 0 else 0,  # 简化的完整性指标
-        'avg_events_per_month': avg_events_per_month,
-        'unique_dates': unique_dates,
-        'max_events_per_day': max_events_per_day
-    }
-    
-    conn.close()
-    
-    return {
-        'total_events': total_events,
-        'event_types_count': event_types_count,
-        'date_range_days': date_range_days,
-        'latest_event_date': latest_event_date,
-        'event_type_stats': event_type_stats,
-        'data_quality': data_quality
-    }
+        # 事件类型统计
+        cursor.execute('SELECT event_type, COUNT(*) as count FROM events GROUP BY event_type ORDER BY count DESC')
+        type_stats_raw = cursor.fetchall()
+        
+        event_type_stats = []
+        for event_type, count in type_stats_raw:
+            cursor.execute('SELECT MAX(date) FROM events WHERE event_type = ?', (event_type,))
+            latest_date = cursor.fetchone()[0]
+            
+            type_display = {
+                'custom': '自定义',
+                'policy': '政策',
+                'economic': '经济'
+            }.get(event_type, event_type)
+            
+            event_type_stats.append({
+                'type': event_type,
+                'type_display': type_display,
+                'count': count,
+                'percentage': (count / total_events * 100) if total_events > 0 else 0,
+                'latest_date': latest_date or '无'
+            })
+        
+        # 数据质量分析
+        cursor.execute('SELECT COUNT(DISTINCT date) FROM events')
+        unique_dates = cursor.fetchone()[0]
+        
+        cursor.execute('SELECT date, COUNT(*) as daily_count FROM events GROUP BY date ORDER BY daily_count DESC LIMIT 1')
+        max_events_result = cursor.fetchone()
+        max_events_per_day = max_events_result[1] if max_events_result else 0
+        
+        # 计算月均事件数
+        if date_range[0] and date_range[1]:
+            months_span = max(1, date_range_days / 30)
+            avg_events_per_month = round(total_events / months_span, 1)
+        else:
+            avg_events_per_month = 0
+        
+        data_quality = {
+            'completeness': 100 if total_events > 0 else 0,  # 简化的完整性指标
+            'avg_events_per_month': avg_events_per_month,
+            'unique_dates': unique_dates,
+            'max_events_per_day': max_events_per_day
+        }
+        
+        return {
+            'total_events': total_events,
+            'event_types_count': event_types_count,
+            'date_range_days': date_range_days,
+            'latest_event_date': latest_event_date,
+            'event_type_stats': event_type_stats,
+            'data_quality': data_quality
+        }
 
 def get_smart_events_for_stock(stock_code: str):
     """智能获取股票相关的事件数据"""
@@ -969,74 +991,71 @@ def get_smart_events_for_stock(stock_code: str):
 
 def get_events_with_details():
     """获取带有AI分析详情的事件数据（优先使用政策数据表）"""
-    conn = sqlite3.connect(EVENTS_DB_FILE)
-    cursor = conn.cursor()
-    
-    # 首先尝试从新的政策数据表获取
-    try:
-        cursor.execute("""
-            SELECT pe.id, pe.date, pe.title, pe.event_type, pe.department, pe.policy_level, pe.impact_level, 
-                   pe.source_url, pe.created_at, pe.content_type,
-                   pa.industries, pa.analysis_summary, pa.confidence_score
-            FROM policy_events pe
-            LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id
-            ORDER BY pe.date DESC
-        """)
-        events = cursor.fetchall()
+    with get_db_connection(EVENTS_DB_FILE) as conn:
+        cursor = conn.cursor()
         
-        if events:
-            conn.close()
+        # 首先尝试从新的政策数据表获取
+        try:
+            cursor.execute("""
+                SELECT pe.id, pe.date, pe.title, pe.event_type, pe.department, pe.policy_level, pe.impact_level, 
+                       pe.source_url, pe.created_at, pe.content_type,
+                       pa.industries, pa.analysis_summary, pa.confidence_score
+                FROM policy_events pe
+                LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id
+                ORDER BY pe.date DESC
+            """)
+            events = cursor.fetchall()
             
-            events_list = []
-            for event in events:
-                # 解析AI分析结果的JSON数据
-                industries = json.loads(event[10]) if event[10] else []
+            if events:
+                events_list = []
+                for event in events:
+                    # 解析AI分析结果的JSON数据
+                    industries = json.loads(event[10]) if event[10] else []
+                    
+                    events_list.append({
+                        'id': event[0],
+                        'date': event[1],
+                        'title': event[2],
+                        'event_type': event[3],
+                        'department': event[4] if event[4] else '',
+                        'policy_level': event[5] if event[5] else '',
+                        'impact_level': event[6] if event[6] else '',
+                        'source_url': event[7] if event[7] else '',
+                        'created_at': event[8] if event[8] else '',
+                        'content_type': event[9] if event[9] else '政策',
+                        'ai_industries': industries,
+                        'ai_summary': event[11] if event[11] else '',
+                        'ai_confidence': event[12] if event[12] else None
+                    })
                 
-                events_list.append({
-                    'id': event[0],
-                    'date': event[1],
-                    'title': event[2],
-                    'event_type': event[3],
-                    'department': event[4] if event[4] else '',
-                    'policy_level': event[5] if event[5] else '',
-                    'impact_level': event[6] if event[6] else '',
-                    'source_url': event[7] if event[7] else '',
-                    'created_at': event[8] if event[8] else '',
-                    'content_type': event[9] if event[9] else '政策',
-                    'ai_industries': industries,
-                    'ai_summary': event[11] if event[11] else '',
-                    'ai_confidence': event[12] if event[12] else None
-                })
-            
-            return events_list
-    except sqlite3.OperationalError:
-        # 如果政策数据表不存在，回退到旧表
-        pass
-    
-    # 回退到旧的events表
-    cursor.execute('SELECT date, title, event_type, created_at FROM events ORDER BY date DESC')
-    rows = cursor.fetchall()
-    
-    events = []
-    for row in rows:
-        events.append({
-            'date': row[0],
-            'title': row[1],
-            'event_type': row[2],
-            'department': '',
-            'policy_level': '',
-            'impact_level': '',
-            'source_url': '',
-            'created_at': row[3],
-            'ai_industries': [],
-            'ai_sectors': [],
-            'ai_stocks': [],
-            'ai_summary': '',
-            'ai_confidence': None
-        })
-    
-    conn.close()
-    return events
+                return events_list
+        except sqlite3.OperationalError:
+            # 如果政策数据表不存在，回退到旧表
+            pass
+        
+        # 回退到旧的events表
+        cursor.execute('SELECT date, title, event_type, created_at FROM events ORDER BY date DESC')
+        rows = cursor.fetchall()
+        
+        events = []
+        for row in rows:
+            events.append({
+                'date': row[0],
+                'title': row[1],
+                'event_type': row[2],
+                'department': '',
+                'policy_level': '',
+                'impact_level': '',
+                'source_url': '',
+                'created_at': row[3],
+                'ai_industries': [],
+                'ai_sectors': [],
+                'ai_stocks': [],
+                'ai_summary': '',
+                'ai_confidence': None
+            })
+        
+        return events
 
 # --- Flask 路由 --- #
 @app.route('/data-viewer')
@@ -1193,11 +1212,10 @@ def analyze_stock_industry():
         
         # 如果强制刷新，先删除现有数据
         if force_refresh:
-            conn = sqlite3.connect(EVENTS_DB_FILE)
-            cursor = conn.cursor()
-            cursor.execute('DELETE FROM stock_industry_mapping WHERE stock_code = ?', (stock_code,))
-            conn.commit()
-            conn.close()
+            with get_db_connection(EVENTS_DB_FILE) as conn:
+                cursor = conn.cursor()
+                cursor.execute('DELETE FROM stock_industry_mapping WHERE stock_code = ?', (stock_code,))
+                conn.commit()
         
         # 获取或分析股票行业信息
         result = stock_industry_analyzer.get_or_analyze_stock_industry(stock_code, stock_name)
@@ -1270,31 +1288,30 @@ def delete_event():
                 'message': '缺少事件标题参数'
             }), 400
         
-        conn = sqlite3.connect(EVENTS_DB_FILE)
-        cursor = conn.cursor()
-        
-        # 先检查policy_events表是否存在并尝试删除
-        try:
-            cursor.execute('SELECT COUNT(*) FROM policy_events WHERE title = ?', (event_title,))
-            policy_count = cursor.fetchone()[0]
-            if policy_count > 0:
-                cursor.execute('DELETE FROM policy_events WHERE title = ?', (event_title,))
-                deleted_count = cursor.rowcount
-            else:
+        with get_db_connection(EVENTS_DB_FILE) as conn:
+            cursor = conn.cursor()
+            
+            # 先检查policy_events表是否存在并尝试删除
+            try:
+                cursor.execute('SELECT COUNT(*) FROM policy_events WHERE title = ?', (event_title,))
+                policy_count = cursor.fetchone()[0]
+                if policy_count > 0:
+                    cursor.execute('DELETE FROM policy_events WHERE title = ?', (event_title,))
+                    deleted_count = cursor.rowcount
+                else:
+                    deleted_count = 0
+            except sqlite3.OperationalError:
+                # policy_events表不存在
                 deleted_count = 0
-        except sqlite3.OperationalError:
-            # policy_events表不存在
-            deleted_count = 0
-        
-        # 检查并删除events表中的数据
-        cursor.execute('SELECT COUNT(*) FROM events WHERE title = ?', (event_title,))
-        events_count = cursor.fetchone()[0]
-        if events_count > 0:
-            cursor.execute('DELETE FROM events WHERE title = ?', (event_title,))
-            deleted_count += cursor.rowcount
-        
-        conn.commit()
-        conn.close()
+            
+            # 检查并删除events表中的数据
+            cursor.execute('SELECT COUNT(*) FROM events WHERE title = ?', (event_title,))
+            events_count = cursor.fetchone()[0]
+            if events_count > 0:
+                cursor.execute('DELETE FROM events WHERE title = ?', (event_title,))
+                deleted_count += cursor.rowcount
+            
+            conn.commit()
         
         if deleted_count > 0:
             return jsonify({

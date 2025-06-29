@@ -18,6 +18,7 @@ from src.core.ai_policy_analyzer import AIPolicyAnalyzer
 from src.utils.config import init_config, Config
 import logging
 import sqlite3
+from contextlib import contextmanager
 
 # 配置日志
 logging.basicConfig(
@@ -26,36 +27,50 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@contextmanager
+def get_db_connection(db_path):
+    """数据库连接上下文管理器"""
+    conn = None
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        yield conn
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        raise e
+    finally:
+        if conn:
+            conn.close()
+
 def check_stored_content_stats(db_path: str):
     """检查数据库中存储内容的统计信息"""
     try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        # 统计总政策数量
-        cursor.execute('SELECT COUNT(*) FROM policy_events')
-        total_policies = cursor.fetchone()[0]
-        
-        # 统计已分析的政策数量
-        cursor.execute('SELECT COUNT(*) FROM policy_analysis')
-        analyzed_policies = cursor.fetchone()[0]
-        
-        # 统计有存储内容的政策数量
-        cursor.execute('''
-            SELECT COUNT(*) FROM policy_analysis 
-            WHERE full_content IS NOT NULL AND full_content != ''
-        ''')
-        stored_content_policies = cursor.fetchone()[0]
-        
-        # 统计不同内容质量的政策数量
-        cursor.execute('''
-            SELECT content_quality, COUNT(*) 
-            FROM policy_analysis 
-            GROUP BY content_quality
-        ''')
-        quality_stats = cursor.fetchall()
-        
-        conn.close()
+        with get_db_connection(db_path) as conn:
+            cursor = conn.cursor()
+            
+            # 统计总政策数量
+            cursor.execute('SELECT COUNT(*) FROM policy_events')
+            total_policies = cursor.fetchone()[0]
+            
+            # 统计已分析的政策数量
+            cursor.execute('SELECT COUNT(*) FROM policy_analysis')
+            analyzed_policies = cursor.fetchone()[0]
+            
+            # 统计有存储内容的政策数量
+            cursor.execute('''
+                SELECT COUNT(*) FROM policy_analysis 
+                WHERE full_content IS NOT NULL AND full_content != ''
+            ''')
+            stored_content_policies = cursor.fetchone()[0]
+            
+            # 统计不同内容质量的政策数量
+            cursor.execute('''
+                SELECT content_quality, COUNT(*) 
+                FROM policy_analysis 
+                GROUP BY content_quality
+            ''')
+            quality_stats = cursor.fetchall()
         
         logger.info(f"=== 政策内容存储统计 ===")
         logger.info(f"总政策数量: {total_policies}")

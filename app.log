@@ -4005,3 +4005,240 @@ Current browser version is 137.0.7151.104 with binary path C:\Program Files\Goog
 2025-06-29 00:07:41,839 - werkzeug - WARNING -  * Running on all addresses.
    WARNING: This is a development server. Do not use it in a production deployment.
 2025-06-29 00:07:41,839 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-29 21:02:15,154 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-29 21:02:15,165 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-29 21:02:15,212 - werkzeug - WARNING -  * Debugger is active!
+2025-06-29 21:02:15,239 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-29 21:02:16,300 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-29 21:02:16,301 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-29 21:02:38,739 - src.core.policy_data_fetcher - INFO - 开始收集政策数据，最多抓取 10 页
+2025-06-29 21:02:38,742 - src.core.policy_data_fetcher - INFO - 数据库初始化完成
+2025-06-29 21:02:38,753 - src.core.policy_data_fetcher - INFO - 成功迁移 0 条历史数据
+2025-06-29 21:02:38,755 - src.core.policy_data_fetcher - INFO - 开始获取政策数据，最多抓取 10 页...
+2025-06-29 21:02:38,777 - src.core.policy_data_fetcher - INFO - 开始抓取政策数据
+2025-06-29 21:02:38,780 - src.core.policy_data_fetcher - INFO - 正在获取政策第1页: https://www.gov.cn/zhengce/zuixin/home_0.htm
+2025-06-29 21:02:40,919 - src.core.policy_data_fetcher - INFO - 政策第1页获取到 8 条数据
+2025-06-29 21:02:41,934 - src.core.policy_data_fetcher - INFO - 正在获取政策第2页: https://www.gov.cn/zhengce/zuixin/home_1.htm
+2025-06-29 21:02:42,000 - src.core.policy_data_fetcher - INFO - 政策第2页获取到 10 条数据
+2025-06-29 21:02:43,005 - src.core.policy_data_fetcher - INFO - 正在获取政策第3页: https://www.gov.cn/zhengce/zuixin/home_2.htm
+2025-06-29 21:02:43,439 - src.core.policy_data_fetcher - INFO - 政策第3页获取到 13 条数据
+2025-06-29 21:02:44,450 - src.core.policy_data_fetcher - INFO - 正在获取政策第4页: https://www.gov.cn/zhengce/zuixin/home_3.htm
+2025-06-29 21:02:44,623 - src.core.policy_data_fetcher - INFO - 政策第4页获取到 17 条数据
+2025-06-29 21:02:45,638 - src.core.policy_data_fetcher - INFO - 正在获取政策第5页: https://www.gov.cn/zhengce/zuixin/home_4.htm
+2025-06-29 21:02:45,737 - src.core.policy_data_fetcher - INFO - 政策第5页获取到 17 条数据
+2025-06-29 21:02:46,756 - src.core.policy_data_fetcher - INFO - 正在获取政策第6页: https://www.gov.cn/zhengce/zuixin/home_5.htm
+2025-06-29 21:02:47,136 - src.core.policy_data_fetcher - INFO - 政策第6页获取到 15 条数据
+2025-06-29 21:02:48,143 - src.core.policy_data_fetcher - INFO - 正在获取政策第7页: https://www.gov.cn/zhengce/zuixin/home_6.htm
+2025-06-29 21:02:48,500 - src.core.policy_data_fetcher - INFO - 政策第7页获取到 12 条数据
+2025-06-29 21:02:49,517 - src.core.policy_data_fetcher - INFO - 正在获取政策第8页: https://www.gov.cn/zhengce/zuixin/home_7.htm
+2025-06-29 21:02:49,605 - src.core.policy_data_fetcher - INFO - 政策第8页获取到 10 条数据
+2025-06-29 21:02:50,616 - src.core.policy_data_fetcher - INFO - 正在获取政策第9页: https://www.gov.cn/zhengce/zuixin/home_8.htm
+2025-06-29 21:02:50,776 - src.core.policy_data_fetcher - INFO - 政策第9页获取到 12 条数据
+2025-06-29 21:02:51,838 - src.core.policy_data_fetcher - INFO - 正在获取政策第10页: https://www.gov.cn/zhengce/zuixin/home_9.htm
+2025-06-29 21:02:51,914 - src.core.policy_data_fetcher - INFO - 政策第10页获取到 14 条数据
+2025-06-29 21:02:52,926 - src.core.policy_data_fetcher - INFO - gov.cn 总共获取到 128 条数据（包含政策和新闻）
+2025-06-29 21:02:52,929 - src.core.policy_data_fetcher - INFO - 记录gov_cn抓取成功: 128条记录
+2025-06-29 21:02:52,936 - src.core.policy_data_fetcher - INFO - 正在获取发改委主页: https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/index.html
+2025-06-29 21:02:53,117 - src.core.policy_data_fetcher - INFO - 发改委主页获取到 0 条政策
+2025-06-29 21:02:54,129 - src.core.policy_data_fetcher - INFO - 正在尝试发改委第1页: https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/index.html
+2025-06-29 21:02:54,190 - src.core.policy_data_fetcher - INFO - 发改委第1页获取到 0 条政策
+2025-06-29 21:02:54,191 - src.core.policy_data_fetcher - INFO - 发改委第1页无新内容，停止抓取
+2025-06-29 21:02:54,191 - src.core.policy_data_fetcher - INFO - 发改委总共获取到 0 条政策
+2025-06-29 21:02:54,200 - src.core.policy_data_fetcher - INFO - 记录ndrc抓取成功: 0条记录
+2025-06-29 21:02:54,207 - src.core.policy_data_fetcher - INFO - 开始抓取财政部政策数据
+2025-06-29 21:02:54,210 - src.core.policy_data_fetcher - INFO - 正在获取财政部第1页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index.htm
+2025-06-29 21:02:54,553 - src.core.policy_data_fetcher - INFO - 财政部第1页获取到 24 条政策
+2025-06-29 21:02:55,555 - src.core.policy_data_fetcher - INFO - 正在获取财政部第2页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_1.htm
+2025-06-29 21:02:55,666 - src.core.policy_data_fetcher - INFO - 财政部第2页获取到 21 条政策
+2025-06-29 21:02:56,727 - src.core.policy_data_fetcher - INFO - 正在获取财政部第3页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_2.htm
+2025-06-29 21:02:57,040 - src.core.policy_data_fetcher - INFO - 财政部第3页获取到 25 条政策
+2025-06-29 21:02:58,048 - src.core.policy_data_fetcher - INFO - 正在获取财政部第4页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_3.htm
+2025-06-29 21:02:58,151 - src.core.policy_data_fetcher - INFO - 财政部第4页获取到 21 条政策
+2025-06-29 21:02:59,166 - src.core.policy_data_fetcher - INFO - 正在获取财政部第5页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_4.htm
+2025-06-29 21:02:59,335 - src.core.policy_data_fetcher - INFO - 财政部第5页获取到 22 条政策
+2025-06-29 21:03:00,350 - src.core.policy_data_fetcher - INFO - 正在获取财政部第6页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_5.htm
+2025-06-29 21:03:00,498 - src.core.policy_data_fetcher - INFO - 财政部第6页获取到 17 条政策
+2025-06-29 21:03:01,671 - src.core.policy_data_fetcher - INFO - 正在获取财政部第7页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_6.htm
+2025-06-29 21:03:01,807 - src.core.policy_data_fetcher - INFO - 财政部第7页获取到 23 条政策
+2025-06-29 21:03:02,816 - src.core.policy_data_fetcher - INFO - 正在获取财政部第8页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_7.htm
+2025-06-29 21:03:02,906 - src.core.policy_data_fetcher - INFO - 财政部第8页获取到 24 条政策
+2025-06-29 21:03:03,919 - src.core.policy_data_fetcher - INFO - 正在获取财政部第9页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_8.htm
+2025-06-29 21:03:04,053 - src.core.policy_data_fetcher - INFO - 财政部第9页获取到 24 条政策
+2025-06-29 21:03:05,064 - src.core.policy_data_fetcher - INFO - 正在获取财政部第10页: https://www.mof.gov.cn/zhengwuxinxi/zhengcefabu/index_9.htm
+2025-06-29 21:03:05,142 - src.core.policy_data_fetcher - INFO - 财政部第10页获取到 22 条政策
+2025-06-29 21:03:06,148 - src.core.policy_data_fetcher - INFO - 财政部总共获取到 223 条政策数据
+2025-06-29 21:03:06,150 - src.core.policy_data_fetcher - INFO - 记录mof抓取成功: 223条记录
+2025-06-29 21:03:06,159 - src.core.policy_data_fetcher - INFO - 开始抓取证监会政策数据，最多抓取 10 页
+2025-06-29 21:03:06,160 - src.core.policy_data_fetcher - INFO - 正在获取证监会第1页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=1
+2025-06-29 21:03:06,546 - src.core.policy_data_fetcher - INFO - 证监会第1页获取到 18 条政策
+2025-06-29 21:03:07,070 - src.core.policy_data_fetcher - INFO - 正在获取证监会第2页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=2
+2025-06-29 21:03:07,493 - src.core.policy_data_fetcher - INFO - 证监会第2页获取到 18 条政策
+2025-06-29 21:03:08,006 - src.core.policy_data_fetcher - INFO - 正在获取证监会第3页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=3
+2025-06-29 21:03:08,554 - src.core.policy_data_fetcher - INFO - 证监会第3页获取到 18 条政策
+2025-06-29 21:03:09,062 - src.core.policy_data_fetcher - INFO - 正在获取证监会第4页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=4
+2025-06-29 21:03:09,445 - src.core.policy_data_fetcher - INFO - 证监会第4页获取到 18 条政策
+2025-06-29 21:03:09,948 - src.core.policy_data_fetcher - INFO - 正在获取证监会第5页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=5
+2025-06-29 21:03:10,273 - src.core.policy_data_fetcher - INFO - 证监会第5页获取到 18 条政策
+2025-06-29 21:03:10,783 - src.core.policy_data_fetcher - INFO - 正在获取证监会第6页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=6
+2025-06-29 21:03:11,161 - src.core.policy_data_fetcher - INFO - 证监会第6页获取到 18 条政策
+2025-06-29 21:03:11,684 - src.core.policy_data_fetcher - INFO - 正在获取证监会第7页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=7
+2025-06-29 21:03:11,870 - src.core.policy_data_fetcher - INFO - 证监会第7页获取到 18 条政策
+2025-06-29 21:03:12,391 - src.core.policy_data_fetcher - INFO - 正在获取证监会第8页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=8
+2025-06-29 21:03:12,876 - src.core.policy_data_fetcher - INFO - 证监会第8页获取到 18 条政策
+2025-06-29 21:03:13,382 - src.core.policy_data_fetcher - INFO - 正在获取证监会第9页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=9
+2025-06-29 21:03:13,603 - src.core.policy_data_fetcher - INFO - 证监会第9页获取到 18 条政策
+2025-06-29 21:03:14,121 - src.core.policy_data_fetcher - INFO - 正在获取证监会第10页: http://www.csrc.gov.cn/searchList/a1a078ee0bc54721ab6b148884c784a8?_isAgg=true&_isJson=true&_pageSize=18&_template=index&page=10
+2025-06-29 21:03:14,501 - src.core.policy_data_fetcher - INFO - 证监会第10页获取到 18 条政策
+2025-06-29 21:03:15,006 - src.core.policy_data_fetcher - INFO - 证监会总共获取到 180 条政策数据
+2025-06-29 21:03:15,010 - src.core.policy_data_fetcher - INFO - 记录csrc抓取成功: 180条记录
+2025-06-29 21:03:15,013 - src.core.policy_data_fetcher - INFO - 原始数据 531 条，去重后 531 条唯一政策数据
+2025-06-29 21:03:15,293 - src.core.policy_data_fetcher - INFO - 过滤完成：原有 531 条，新增 3 条
+2025-06-29 21:03:15,293 - src.core.policy_data_fetcher - INFO - 成功保存 0 条政策数据
+2025-06-29 21:03:15,308 - src.core.policy_data_fetcher - INFO - 数据收集完成，抓取 531 条，过滤后 3 条新数据，实际保存 0 条
+2025-06-29 21:03:15,325 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 21:03:15] "POST /fetch-policy-data HTTP/1.1" 200 -
+2025-06-29 21:03:18,902 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 21:03:18] "GET /data-viewer?tab=events HTTP/1.1" 200 -
+2025-06-29 21:08:34,595 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 证监会严肃查处财务造假案件 首次对配合造假方同步追责...
+2025-06-29 21:08:34,597 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7567398/content.shtml
+2025-06-29 21:08:34,597 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7567398/content.shtml
+2025-06-29 21:08:34,855 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 1173字符
+2025-06-29 21:09:05,096 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:09:05,096 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 证监会严肃查处财务造假案件 首次对配合造假方同步追责...
+2025-06-29 21:09:05,900 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 国务院办公厅印发《关于进一步完善信用修复制度的实施方案》的通知...
+2025-06-29 21:09:05,901 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: https://www.gov.cn/zhengce/content/202506/content_7029483.htm
+2025-06-29 21:09:05,901 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: https://www.gov.cn/zhengce/content/202506/content_7029483.htm
+2025-06-29 21:09:06,533 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 2217字符
+2025-06-29 21:09:23,683 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 国务院办公厅印发《关于进一步完善信用修复制度的实施方案》的通知..., 内容质量: full
+2025-06-29 21:09:23,683 - src.core.ai_policy_analyzer - INFO - 保存政策ID 3073 的分析结果
+2025-06-29 21:09:23,691 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 国务院办公厅印发《关于进一步完善信用修复制度的实施方案》的通知..., 内容质量: full
+2025-06-29 21:09:24,498 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 国家发展改革委、国务院国资委、中国证监会、全国工商联有关负责同志就《关于完善中国特色现代企业制度的意...
+2025-06-29 21:09:24,500 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7560525/content.shtml
+2025-06-29 21:09:24,500 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7560525/content.shtml
+2025-06-29 21:09:24,836 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 6391字符
+2025-06-29 21:09:54,973 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:09:54,973 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 国家发展改革委、国务院国资委、中国证监会、全国工商联有关负责同志就《关于完善中国特色现代企业制度的意...
+2025-06-29 21:09:55,782 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 中共中央办公厅 国务院办公厅关于完善中国特色现代企业制度的意见...
+2025-06-29 21:09:55,783 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7560538/content.shtml
+2025-06-29 21:09:55,783 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7560538/content.shtml
+2025-06-29 21:09:55,868 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 3884字符
+2025-06-29 21:10:26,037 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:10:26,037 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 中共中央办公厅 国务院办公厅关于完善中国特色现代企业制度的意见...
+2025-06-29 21:10:26,848 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 依法从严执法 护航资本市场高质量发展——2024年中国证监会执法情况综述...
+2025-06-29 21:10:26,850 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7557781/content.shtml
+2025-06-29 21:10:26,850 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7557781/content.shtml
+2025-06-29 21:10:26,962 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 3722字符
+2025-06-29 21:10:57,093 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:10:57,093 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 依法从严执法 护航资本市场高质量发展——2024年中国证监会执法情况综述...
+2025-06-29 21:10:57,899 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 最高人民法院 中国证券监督管理委员会印发《关于严格公正执法司法 服务保障资本市场高质量发展的指导意见...
+2025-06-29 21:10:57,899 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7557835/content.shtml
+2025-06-29 21:10:57,899 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7557835/content.shtml
+2025-06-29 21:10:58,084 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 9265字符
+2025-06-29 21:11:28,200 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:11:28,201 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 最高人民法院 中国证券监督管理委员会印发《关于严格公正执法司法 服务保障资本市场高质量发展的指导意见...
+2025-06-29 21:11:29,016 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 最高人民法院、中国证监会联合发布《关于严格公正执法司法 服务保障资本市场高质量发展的指导意见》...
+2025-06-29 21:11:29,020 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7557837/content.shtml
+2025-06-29 21:11:29,030 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7557837/content.shtml
+2025-06-29 21:11:29,371 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 1172字符
+2025-06-29 21:11:59,504 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:11:59,504 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 最高人民法院、中国证监会联合发布《关于严格公正执法司法 服务保障资本市场高质量发展的指导意见》...
+2025-06-29 21:12:00,325 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 陈华平副主席在2025年“5·15全国投资者保护宣传日”活动上的致辞...
+2025-06-29 21:12:00,325 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7557785/content.shtml
+2025-06-29 21:12:00,328 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7557785/content.shtml
+2025-06-29 21:12:00,525 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 2304字符
+2025-06-29 21:12:30,654 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:12:30,654 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 陈华平副主席在2025年“5·15全国投资者保护宣传日”活动上的致辞...
+2025-06-29 21:12:31,459 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 中国证监会印发2025年度立法工作计划...
+2025-06-29 21:12:31,459 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7556553/content.shtml
+2025-06-29 21:12:31,459 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7556553/content.shtml
+2025-06-29 21:12:31,721 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 1276字符
+2025-06-29 21:13:01,861 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:13:01,862 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 中国证监会印发2025年度立法工作计划...
+2025-06-29 21:13:02,675 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 关于印发《推动公募基金高质量发展行动方案》的通知...
+2025-06-29 21:13:02,675 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7555824/content.shtml
+2025-06-29 21:13:02,675 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7555824/content.shtml
+2025-06-29 21:13:02,917 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 5733字符
+2025-06-29 21:13:18,336 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 关于印发《推动公募基金高质量发展行动方案》的通知..., 内容质量: full
+2025-06-29 21:13:18,336 - src.core.ai_policy_analyzer - INFO - 保存政策ID 2209 的分析结果
+2025-06-29 21:13:18,336 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 关于印发《推动公募基金高质量发展行动方案》的通知..., 内容质量: full
+2025-06-29 21:13:19,165 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 21:13:19] "POST /ai-analysis HTTP/1.1" 200 -
+2025-06-29 21:13:22,401 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 21:13:22] "GET /data-viewer?tab=events HTTP/1.1" 200 -
+2025-06-29 21:18:35,517 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 证监会严肃查处财务造假案件 首次对配合造假方同步追责...
+2025-06-29 21:18:35,518 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7567398/content.shtml
+2025-06-29 21:18:35,519 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7567398/content.shtml
+2025-06-29 21:18:35,666 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 1173字符
+2025-06-29 21:19:05,833 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:19:05,837 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 证监会严肃查处财务造假案件 首次对配合造假方同步追责...
+2025-06-29 21:19:06,639 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 国家发展改革委、国务院国资委、中国证监会、全国工商联有关负责同志就《关于完善中国特色现代企业制度的意...
+2025-06-29 21:19:06,658 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7560525/content.shtml
+2025-06-29 21:19:06,663 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7560525/content.shtml
+2025-06-29 21:19:07,011 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 6391字符
+2025-06-29 21:19:17,300 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 国家发展改革委、国务院国资委、中国证监会、全国工商联有关负责同志就《关于完善中国特色现代企业制度的意..., 内容质量: full
+2025-06-29 21:19:17,300 - src.core.ai_policy_analyzer - INFO - 保存政策ID 2198 的分析结果
+2025-06-29 21:19:17,317 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 国家发展改革委、国务院国资委、中国证监会、全国工商联有关负责同志就《关于完善中国特色现代企业制度的意..., 内容质量: full
+2025-06-29 21:19:18,124 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 中共中央办公厅 国务院办公厅关于完善中国特色现代企业制度的意见...
+2025-06-29 21:19:18,124 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7560538/content.shtml
+2025-06-29 21:19:18,124 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7560538/content.shtml
+2025-06-29 21:19:18,292 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 3884字符
+2025-06-29 21:19:34,648 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 中共中央办公厅 国务院办公厅关于完善中国特色现代企业制度的意见..., 内容质量: full
+2025-06-29 21:19:34,662 - src.core.ai_policy_analyzer - INFO - 保存政策ID 2199 的分析结果
+2025-06-29 21:19:34,669 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 中共中央办公厅 国务院办公厅关于完善中国特色现代企业制度的意见..., 内容质量: full
+2025-06-29 21:19:35,484 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 依法从严执法 护航资本市场高质量发展——2024年中国证监会执法情况综述...
+2025-06-29 21:19:35,508 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7557781/content.shtml
+2025-06-29 21:19:35,510 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7557781/content.shtml
+2025-06-29 21:19:35,762 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 3722字符
+2025-06-29 21:20:05,915 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:20:05,915 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 依法从严执法 护航资本市场高质量发展——2024年中国证监会执法情况综述...
+2025-06-29 21:20:06,729 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 最高人民法院 中国证券监督管理委员会印发《关于严格公正执法司法 服务保障资本市场高质量发展的指导意见...
+2025-06-29 21:20:06,733 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7557835/content.shtml
+2025-06-29 21:20:06,757 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7557835/content.shtml
+2025-06-29 21:20:07,087 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 9265字符
+2025-06-29 21:20:37,232 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:20:37,232 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 最高人民法院 中国证券监督管理委员会印发《关于严格公正执法司法 服务保障资本市场高质量发展的指导意见...
+2025-06-29 21:20:38,051 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 最高人民法院、中国证监会联合发布《关于严格公正执法司法 服务保障资本市场高质量发展的指导意见》...
+2025-06-29 21:20:38,051 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7557837/content.shtml
+2025-06-29 21:20:38,051 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7557837/content.shtml
+2025-06-29 21:20:38,238 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 1172字符
+2025-06-29 21:21:08,377 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:21:08,377 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 最高人民法院、中国证监会联合发布《关于严格公正执法司法 服务保障资本市场高质量发展的指导意见》...
+2025-06-29 21:21:09,189 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 陈华平副主席在2025年“5·15全国投资者保护宣传日”活动上的致辞...
+2025-06-29 21:21:09,189 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7557785/content.shtml
+2025-06-29 21:21:09,189 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7557785/content.shtml
+2025-06-29 21:21:09,421 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 2304字符
+2025-06-29 21:21:26,066 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 陈华平副主席在2025年“5·15全国投资者保护宣传日”活动上的致辞..., 内容质量: full
+2025-06-29 21:21:26,074 - src.core.ai_policy_analyzer - INFO - 保存政策ID 2207 的分析结果
+2025-06-29 21:21:26,077 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 陈华平副主席在2025年“5·15全国投资者保护宣传日”活动上的致辞..., 内容质量: full
+2025-06-29 21:21:26,886 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 中国证监会印发2025年度立法工作计划...
+2025-06-29 21:21:26,887 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7556553/content.shtml
+2025-06-29 21:21:26,888 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7556553/content.shtml
+2025-06-29 21:21:27,089 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 1276字符
+2025-06-29 21:21:57,232 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:21:57,233 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 中国证监会印发2025年度立法工作计划...
+2025-06-29 21:21:58,045 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 中国证监会印发《推动公募基金高质量发展行动方案》...
+2025-06-29 21:21:58,046 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c100028/c7555822/content.shtml
+2025-06-29 21:21:58,047 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c100028/c7555822/content.shtml
+2025-06-29 21:21:58,254 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 1307字符
+2025-06-29 21:22:14,916 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 中国证监会印发《推动公募基金高质量发展行动方案》..., 内容质量: full
+2025-06-29 21:22:14,922 - src.core.ai_policy_analyzer - INFO - 保存政策ID 2210 的分析结果
+2025-06-29 21:22:14,924 - src.core.ai_policy_analyzer - INFO - 政策分析完成: 中国证监会印发《推动公募基金高质量发展行动方案》..., 内容质量: full
+2025-06-29 21:22:15,734 - src.core.ai_policy_analyzer - INFO - 开始分析政策: 国新办举行新闻发布会 介绍“一揽子金融政策支持稳市场稳预期”有关情况...
+2025-06-29 21:22:15,735 - src.core.ai_policy_analyzer - INFO - 尝试从原文链接获取政策内容: http://www.csrc.gov.cn/csrc/c106311/c7555758/content.shtml
+2025-06-29 21:22:15,736 - src.core.ai_policy_analyzer - INFO - 正在抓取政策原文: http://www.csrc.gov.cn/csrc/c106311/c7555758/content.shtml
+2025-06-29 21:22:16,130 - src.core.ai_policy_analyzer - INFO - 成功抓取内容，长度: 17909字符
+2025-06-29 21:22:46,269 - src.core.ai_policy_analyzer - ERROR - API调用异常: HTTPSConnectionPool(host='api.siliconflow.cn', port=443): Read timed out. (read timeout=30)
+2025-06-29 21:22:46,269 - src.core.ai_policy_analyzer - WARNING - 政策分析失败: 国新办举行新闻发布会 介绍“一揽子金融政策支持稳市场稳预期”有关情况...
+2025-06-29 21:22:47,088 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 21:22:47] "POST /ai-analysis HTTP/1.1" 200 -
+2025-06-29 23:57:02,054 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-06-29 23:57:02,054 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-06-29 23:57:02,085 - werkzeug - WARNING -  * Debugger is active!
+2025-06-29 23:57:02,108 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-06-29 23:57:03,129 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-06-29 23:57:03,129 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-06-29 23:57:08,129 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 23:57:08] "GET / HTTP/1.1" 200 -
+2025-06-29 23:57:08,184 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 23:57:08] "GET /static/css/kline.css HTTP/1.1" 200 -
+2025-06-29 23:57:08,191 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 23:57:08] "GET /static/js/kline.js HTTP/1.1" 200 -
+2025-06-29 23:57:10,242 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 23:57:10] "[32mPOST / HTTP/1.1[0m" 302 -
+2025-06-29 23:58:00,387 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 23:58:00] "GET /kline/000001.SH HTTP/1.1" 200 -
+2025-06-29 23:58:00,507 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 23:58:00] "[36mGET /static/css/kline.css HTTP/1.1[0m" 304 -
+2025-06-29 23:58:00,630 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 23:58:00] "[36mGET /static/js/kline.js HTTP/1.1[0m" 304 -
+2025-06-29 23:59:39,417 - werkzeug - INFO - 192.168.2.10 - - [29/Jun/2025 23:59:39] "GET /data-viewer HTTP/1.1" 200 -

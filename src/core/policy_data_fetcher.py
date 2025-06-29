@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import re
 from bs4 import BeautifulSoup
 import logging
+from contextlib import contextmanager
 
 # 配置日志
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -26,64 +27,79 @@ class PolicyDataFetcher:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
+    
+    @contextmanager
+    def get_db_connection(self):
+        """获取数据库连接的上下文管理器"""
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            yield conn
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            raise e
+        finally:
+            if conn:
+                conn.close()
         
     def init_database(self):
         """初始化数据库表结构"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        # 创建政策数据表
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS policy_events (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TEXT NOT NULL,
-                title TEXT NOT NULL,
-                event_type TEXT NOT NULL,
-                content TEXT,
-                source_url TEXT,
-                department TEXT,
-                policy_level TEXT,
-                impact_level TEXT,
-                content_type TEXT DEFAULT '政策',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # 创建数据源抓取日志表
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS fetch_log (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                source_name TEXT NOT NULL UNIQUE,
-                last_fetch_time TIMESTAMP NOT NULL,
-                fetch_status TEXT NOT NULL DEFAULT 'success',
-                error_message TEXT,
-                records_fetched INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # 创建索引
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_fetch_log_source 
-            ON fetch_log(source_name)
-        ''')
-        
-        cursor.execute('''
-            CREATE INDEX IF NOT EXISTS idx_fetch_log_time 
-            ON fetch_log(last_fetch_time)
-        ''')
-        
-        # 检查并添加content_type字段（为已存在的表添加新字段）
-        try:
-            cursor.execute("ALTER TABLE policy_events ADD COLUMN content_type TEXT DEFAULT '政策'")
-            logger.info("已为policy_events表添加content_type字段")
-        except sqlite3.OperationalError:
-            # 字段已存在，忽略错误
-            pass
-        
-        conn.commit()
-        conn.close()
+        with self.get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # 创建政策数据表
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS policy_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    date TEXT NOT NULL,
+                    title TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    content TEXT,
+                    source_url TEXT,
+                    department TEXT,
+                    policy_level TEXT,
+                    impact_level TEXT,
+                    content_type TEXT DEFAULT '政策',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # 创建数据源抓取日志表
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS fetch_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    source_name TEXT NOT NULL UNIQUE,
+                    last_fetch_time TIMESTAMP NOT NULL,
+                    fetch_status TEXT NOT NULL DEFAULT 'success',
+                    error_message TEXT,
+                    records_fetched INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # 创建索引
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_fetch_log_source 
+                ON fetch_log(source_name)
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_fetch_log_time 
+                ON fetch_log(last_fetch_time)
+            ''')
+            
+            # 检查并添加content_type字段（为已存在的表添加新字段）
+            try:
+                cursor.execute("ALTER TABLE policy_events ADD COLUMN content_type TEXT DEFAULT '政策'")
+                logger.info("已为policy_events表添加content_type字段")
+            except sqlite3.OperationalError:
+                # 字段已存在，忽略错误
+                pass
+            
+            conn.commit()
         logger.info("数据库初始化完成")
     
     def should_skip_fetch(self, source_name, min_interval_hours=1):
@@ -97,20 +113,19 @@ class PolicyDataFetcher:
             bool: True表示应该跳过，False表示可以抓取
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # 查询上次抓取记录
-            cursor.execute('''
-                SELECT last_fetch_time, fetch_status, error_message
-                FROM fetch_log 
-                WHERE source_name = ?
-                ORDER BY last_fetch_time DESC 
-                LIMIT 1
-            ''', (source_name,))
-            
-            result = cursor.fetchone()
-            conn.close()
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # 查询上次抓取记录
+                cursor.execute('''
+                    SELECT last_fetch_time, fetch_status, error_message
+                    FROM fetch_log 
+                    WHERE source_name = ?
+                    ORDER BY last_fetch_time DESC 
+                    LIMIT 1
+                ''', (source_name,))
+                
+                result = cursor.fetchone()
             
             if not result:
                 # 没有抓取记录，可以抓取
@@ -155,20 +170,19 @@ class PolicyDataFetcher:
             error_message: 错误信息（如果有）
         """
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
-            # 使用REPLACE INTO来插入或更新记录
-            cursor.execute('''
-                REPLACE INTO fetch_log 
-                (source_name, last_fetch_time, fetch_status, error_message, records_fetched, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (source_name, current_time, status, error_message, records_count, current_time))
-            
-            conn.commit()
-            conn.close()
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                
+                # 使用REPLACE INTO来插入或更新记录
+                cursor.execute('''
+                    REPLACE INTO fetch_log 
+                    (source_name, last_fetch_time, fetch_status, error_message, records_fetched, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (source_name, current_time, status, error_message, records_count, current_time))
+                
+                conn.commit()
             
             if status == 'success':
                 logger.info(f"记录{source_name}抓取成功: {records_count}条记录")
@@ -832,90 +846,87 @@ class PolicyDataFetcher:
             logger.info("没有新的政策数据需要保存")
             return 0
         
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        saved_count = 0
-        
-        for policy in policies:
-            try:
-                # 检查是否已存在相同的政策
-                cursor.execute(
-                    "SELECT id FROM policy_events WHERE title = ? AND date = ?",
-                    (policy['title'], policy['date'])
-                )
-                
-                if cursor.fetchone() is None:
-                    cursor.execute(
-                        """
-                        INSERT INTO policy_events 
-                        (date, title, event_type, source_url, department, policy_level, impact_level, content_type)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        """,
-                        (
-                            policy['date'],
-                            policy['title'],
-                            policy['event_type'],
-                            policy.get('source_url', ''),
-                            policy.get('department', ''),
-                            policy.get('policy_level', ''),
-                            policy.get('impact_level', ''),
-                            policy.get('content_type', '政策')
-                        )
-                    )
-                    saved_count += 1
-                    
-            except Exception as e:
-                logger.error(f"保存政策数据时出错: {e}")
-                continue
-        
-        conn.commit()
-        conn.close()
-        
-        logger.info(f"成功保存 {saved_count} 条政策数据")
-        return saved_count
-    
-    def migrate_old_events(self):
-        """将旧的events表数据迁移到新的policy_events表"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        try:
-            # 检查旧表是否存在
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events'")
-            if cursor.fetchone():
-                # 获取旧数据
-                cursor.execute("SELECT date, title, event_type FROM events")
-                old_events = cursor.fetchall()
-                
-                migrated_count = 0
-                for event in old_events:
-                    date, title, event_type = event
-                    
-                    # 检查新表中是否已存在
+        with self.get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            saved_count = 0
+            
+            for policy in policies:
+                try:
+                    # 检查是否已存在相同的政策
                     cursor.execute(
                         "SELECT id FROM policy_events WHERE title = ? AND date = ?",
-                        (title, date)
+                        (policy['title'], policy['date'])
                     )
                     
                     if cursor.fetchone() is None:
                         cursor.execute(
                             """
                             INSERT INTO policy_events 
-                            (date, title, event_type, department, policy_level, impact_level, content_type)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            (date, title, event_type, source_url, department, policy_level, impact_level, content_type)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                             """,
-                            (date, title, event_type, '模拟数据', '测试级', '低', '政策')
+                            (
+                                policy['date'],
+                                policy['title'],
+                                policy['event_type'],
+                                policy.get('source_url', ''),
+                                policy.get('department', ''),
+                                policy.get('policy_level', ''),
+                                policy.get('impact_level', ''),
+                                policy.get('content_type', '政策')
+                            )
                         )
-                        migrated_count += 1
-                
-                conn.commit()
-                logger.info(f"成功迁移 {migrated_count} 条历史数据")
-                
-        except Exception as e:
-            logger.error(f"数据迁移时出错: {e}")
+                        saved_count += 1
+                        
+                except Exception as e:
+                    logger.error(f"保存政策数据时出错: {e}")
+                    continue
+            
+            conn.commit()
         
-        conn.close()
+        logger.info(f"成功保存 {saved_count} 条政策数据")
+        return saved_count
+    
+    def migrate_old_events(self):
+        """将旧的events表数据迁移到新的policy_events表"""
+        with self.get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            try:
+                # 检查旧表是否存在
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='events'")
+                if cursor.fetchone():
+                    # 获取旧数据
+                    cursor.execute("SELECT date, title, event_type FROM events")
+                    old_events = cursor.fetchall()
+                    
+                    migrated_count = 0
+                    for event in old_events:
+                        date, title, event_type = event
+                        
+                        # 检查新表中是否已存在
+                        cursor.execute(
+                            "SELECT id FROM policy_events WHERE title = ? AND date = ?",
+                            (title, date)
+                        )
+                        
+                        if cursor.fetchone() is None:
+                            cursor.execute(
+                                """
+                                INSERT INTO policy_events 
+                                (date, title, event_type, department, policy_level, impact_level, content_type)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                                """,
+                                (date, title, event_type, '模拟数据', '测试级', '低', '政策')
+                            )
+                            migrated_count += 1
+                    
+                    conn.commit()
+                    logger.info(f"成功迁移 {migrated_count} 条历史数据")
+                    
+            except Exception as e:
+                logger.error(f"数据迁移时出错: {e}")
     
     def fetch_csrc_policies(self, max_pages=None):
         """从证监会API获取政策数据
@@ -1231,31 +1242,28 @@ class PolicyDataFetcher:
         if not policies:
             return []
         
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        new_policies = []
-        
-        try:
-            for policy in policies:
-                # 检查数据库中是否已存在相同标题和URL的政策
-                cursor.execute(
-                    "SELECT id FROM policy_events WHERE title = ? AND source_url = ?",
-                    (policy['title'], policy['source_url'])
-                )
-                
-                if cursor.fetchone() is None:
-                    new_policies.append(policy)
-                else:
-                    logger.debug(f"数据库中已存在政策，跳过: {policy['title'][:50]}...")
+        with self.get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            new_policies = []
+            
+            try:
+                for policy in policies:
+                    # 检查数据库中是否已存在相同标题和URL的政策
+                    cursor.execute(
+                        "SELECT id FROM policy_events WHERE title = ? AND source_url = ?",
+                        (policy['title'], policy['source_url'])
+                    )
                     
-        except Exception as e:
-            logger.error(f"过滤新政策时出错: {e}")
-            # 如果出错，返回所有政策（让save_policies_to_db处理重复）
-            new_policies = policies
-        
-        finally:
-            conn.close()
+                    if cursor.fetchone() is None:
+                        new_policies.append(policy)
+                    else:
+                        logger.debug(f"数据库中已存在政策，跳过: {policy['title'][:50]}...")
+                        
+            except Exception as e:
+                logger.error(f"过滤新政策时出错: {e}")
+                # 如果出错，返回所有政策（让save_policies_to_db处理重复）
+                new_policies = policies
         
         logger.info(f"过滤完成：原有 {len(policies)} 条，新增 {len(new_policies)} 条")
         return new_policies

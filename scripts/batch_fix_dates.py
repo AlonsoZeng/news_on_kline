@@ -15,6 +15,11 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'tools'))
 from fix_policy_dates import PolicyDateFixer
 import logging
+import requests
+from bs4 import BeautifulSoup
+import re
+from urllib.parse import urljoin, urlparse
+from contextlib import contextmanager
 
 # 配置日志
 logging.basicConfig(
@@ -32,6 +37,22 @@ class BatchPolicyDateFixer(PolicyDateFixer):
         super().__init__(db_path)
         self.progress_file = progress_file
         self.progress = self.load_progress()
+    
+    @contextmanager
+    def get_db_connection(self):
+        """获取数据库连接的上下文管理器"""
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            yield conn
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            raise e
+        finally:
+            if conn:
+                conn.close()
     
     def load_progress(self):
         """加载进度信息"""
@@ -61,18 +82,17 @@ class BatchPolicyDateFixer(PolicyDateFixer):
     
     def get_total_records(self):
         """获取总记录数"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            SELECT COUNT(*) 
-            FROM policy_events 
-            WHERE source_url IS NOT NULL AND source_url != ''
-        ''')
-        
-        total = cursor.fetchone()[0]
-        conn.close()
-        return total
+        with self.get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                SELECT COUNT(*) 
+                FROM policy_events 
+                WHERE source_url IS NOT NULL AND source_url != ''
+            ''')
+            
+            total = cursor.fetchone()[0]
+            return total
     
     def fix_all_policy_dates_with_resume(self, batch_size=50, max_errors=10):
         """批量修正所有政策日期，支持断点续传
@@ -81,10 +101,10 @@ class BatchPolicyDateFixer(PolicyDateFixer):
             batch_size: 批处理大小
             max_errors: 最大连续错误数，超过则停止
         """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        try:
+        with self.get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            try:
             # 获取总记录数
             total_records = self.get_total_records()
             
@@ -197,11 +217,10 @@ class BatchPolicyDateFixer(PolicyDateFixer):
             else:
                 logger.info(f"还有 {remaining} 条记录待处理，可以重新运行脚本继续")
             
-        except Exception as e:
-            logger.error(f"批量修正日期时出错: {e}")
-            conn.rollback()
-        finally:
-            conn.close()
+            except Exception as e:
+                logger.error(f"批量修正日期时出错: {e}")
+                conn.rollback()
+                raise
     
     def reset_progress(self):
         """重置进度，从头开始"""

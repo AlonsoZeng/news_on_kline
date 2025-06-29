@@ -45,3 +45,5 @@
 2025-06-28 23:39:20,684 - werkzeug - INFO -  * Restarting with stat
 2025-06-29 21:02:11,162 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
 2025-06-29 21:02:11,357 - werkzeug - INFO -  * Restarting with stat
+2025-06-29 23:56:58,881 - root - ERROR - 配置验证失败: SILICONFLOW_API_KEY 环境变量未设置
+2025-06-29 23:56:59,156 - werkzeug - INFO -  * Restarting with stat

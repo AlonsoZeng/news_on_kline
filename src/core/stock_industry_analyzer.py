@@ -6,6 +6,7 @@ from datetime import datetime
 import requests
 import sqlite3
 import time
+from contextlib import contextmanager
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,22 @@ class StockIndustryAnalyzer:
         self.db_path = db_path
         self.api_url = "https://api.siliconflow.cn/v1/chat/completions"
         self.init_database()
+    
+    @contextmanager
+    def get_db_connection(self):
+        """获取数据库连接的上下文管理器"""
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            yield conn
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            raise e
+        finally:
+            if conn:
+                conn.close()
     
 
     
@@ -52,59 +69,57 @@ class StockIndustryAnalyzer:
     
     def init_database(self):
         """初始化股票行业映射表"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        # 创建股票行业映射表
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS stock_industry_mapping (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                stock_code TEXT UNIQUE NOT NULL,
-                stock_name TEXT,
-                industries TEXT NOT NULL,  -- JSON格式存储行业列表
-                analysis_summary TEXT,
-                confidence_score REAL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        
-        # 创建索引
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_code ON stock_industry_mapping(stock_code)')
-        
-        conn.commit()
-        conn.close()
+        with self.get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # 创建股票行业映射表
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS stock_industry_mapping (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    stock_code TEXT UNIQUE NOT NULL,
+                    stock_name TEXT,
+                    industries TEXT NOT NULL,  -- JSON格式存储行业列表
+                    analysis_summary TEXT,
+                    confidence_score REAL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # 创建索引
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_code ON stock_industry_mapping(stock_code)')
+            
+            conn.commit()
+            
         logger.info("股票行业映射表初始化完成")
     
     def get_stock_industries(self, stock_code: str) -> Optional[Dict]:
         """获取股票的行业信息"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         try:
-            cursor.execute('''
-                SELECT stock_name, industries, analysis_summary, confidence_score, updated_at
-                FROM stock_industry_mapping
-                WHERE stock_code = ?
-            ''', (stock_code,))
-            
-            result = cursor.fetchone()
-            if result:
-                stock_name, industries_json, summary, confidence, updated_at = result
-                industries = json.loads(industries_json) if industries_json else []
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
                 
-                return {
-                    'stock_code': stock_code,
-                    'stock_name': stock_name,
-                    'industries': industries,
-                    'analysis_summary': summary,
-                    'confidence_score': confidence,
-                    'updated_at': updated_at
-                }
+                cursor.execute('''
+                    SELECT stock_name, industries, analysis_summary, confidence_score, updated_at
+                    FROM stock_industry_mapping
+                    WHERE stock_code = ?
+                ''', (stock_code,))
+                
+                result = cursor.fetchone()
+                if result:
+                    stock_name, industries_json, summary, confidence, updated_at = result
+                    industries = json.loads(industries_json) if industries_json else []
+                    
+                    return {
+                        'stock_code': stock_code,
+                        'stock_name': stock_name,
+                        'industries': industries,
+                        'analysis_summary': summary,
+                        'confidence_score': confidence,
+                        'updated_at': updated_at
+                    }
         except Exception as e:
             logger.error(f"获取股票行业信息失败: {e}")
-        finally:
-            conn.close()
         
         return None
     
@@ -402,35 +417,33 @@ class StockIndustryAnalyzer:
     
     def save_stock_industry(self, stock_code: str, stock_name: str, analysis_result: Dict) -> bool:
         """保存股票行业分析结果"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         try:
-            industries_json = json.dumps(analysis_result.get('industries', []), ensure_ascii=False)
-            
-            # 使用REPLACE语句，如果存在则更新，不存在则插入
-            cursor.execute('''
-                REPLACE INTO stock_industry_mapping 
-                (stock_code, stock_name, industries, analysis_summary, confidence_score, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (
-                stock_code,
-                stock_name,
-                industries_json,
-                analysis_result.get('analysis_summary', ''),
-                analysis_result.get('confidence_score', 0.0),
-                datetime.now().isoformat()
-            ))
-            
-            conn.commit()
-            logger.info(f"成功保存股票 {stock_code} 的行业信息")
-            return True
-            
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                industries_json = json.dumps(analysis_result.get('industries', []), ensure_ascii=False)
+                
+                # 使用REPLACE语句，如果存在则更新，不存在则插入
+                cursor.execute('''
+                    REPLACE INTO stock_industry_mapping 
+                    (stock_code, stock_name, industries, analysis_summary, confidence_score, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (
+                    stock_code,
+                    stock_name,
+                    industries_json,
+                    analysis_result.get('analysis_summary', ''),
+                    analysis_result.get('confidence_score', 0.0),
+                    datetime.now().isoformat()
+                ))
+                
+                conn.commit()
+                logger.info(f"成功保存股票 {stock_code} 的行业信息")
+                return True
+                
         except Exception as e:
             logger.error(f"保存股票行业信息失败: {e}")
             return False
-        finally:
-            conn.close()
     
     def get_or_analyze_stock_industry(self, stock_code: str, stock_name: str = "") -> Optional[Dict]:
         """获取或分析股票行业信息（优先从数据库获取）"""
@@ -463,64 +476,62 @@ class StockIndustryAnalyzer:
         if not industries:
             return []
         
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         try:
-            # 构建查询条件，匹配任一行业关键词
-            industry_conditions = []
-            params = []
-            
-            for industry in industries:
-                industry_conditions.append("(pe.title LIKE ? OR pa.industries LIKE ?)")
-                params.extend([f"%{industry}%", f"%{industry}%"])
-            
-            where_clause = " OR ".join(industry_conditions)
-            
-            query = f"""
-                SELECT DISTINCT pe.id, pe.date, pe.title, pe.event_type, pe.department, 
-                       pe.policy_level, pe.impact_level, pe.source_url, pe.created_at, 
-                       pe.content_type, pa.industries, pa.analysis_summary, pa.confidence_score
-                FROM policy_events pe
-                LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id
-                WHERE {where_clause}
-                ORDER BY pe.date DESC
-                LIMIT ?
-            """
-            
-            params.append(limit)
-            cursor.execute(query, params)
-            events = cursor.fetchall()
-            
-            events_list = []
-            for event in events:
-                # 解析AI分析结果的JSON数据
-                ai_industries = json.loads(event[10]) if event[10] else []
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
                 
-                events_list.append({
-                    'id': event[0],
-                    'date': event[1],
-                    'title': event[2],
-                    'event_type': event[3],
-                    'department': event[4] if event[4] else '',
-                    'policy_level': event[5] if event[5] else '',
-                    'impact_level': event[6] if event[6] else '',
-                    'source_url': event[7] if event[7] else '',
-                    'created_at': event[8] if event[8] else '',
-                    'content_type': event[9] if event[9] else '政策',
-                    'ai_industries': ai_industries,
-                    'ai_summary': event[11] if event[11] else '',
-                    'ai_confidence': event[12] if event[12] else None
-                })
-            
-            logger.info(f"根据行业 {industries} 找到 {len(events_list)} 条相关政策")
-            return events_list
-            
+                # 构建查询条件，匹配任一行业关键词
+                industry_conditions = []
+                params = []
+                
+                for industry in industries:
+                    industry_conditions.append("(pe.title LIKE ? OR pa.industries LIKE ?)")
+                    params.extend([f"%{industry}%", f"%{industry}%"])
+                
+                where_clause = " OR ".join(industry_conditions)
+                
+                query = f"""
+                    SELECT DISTINCT pe.id, pe.date, pe.title, pe.event_type, pe.department, 
+                           pe.policy_level, pe.impact_level, pe.source_url, pe.created_at, 
+                           pe.content_type, pa.industries, pa.analysis_summary, pa.confidence_score
+                    FROM policy_events pe
+                    LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id
+                    WHERE {where_clause}
+                    ORDER BY pe.date DESC
+                    LIMIT ?
+                """
+                
+                params.append(limit)
+                cursor.execute(query, params)
+                events = cursor.fetchall()
+                
+                events_list = []
+                for event in events:
+                    # 解析AI分析结果的JSON数据
+                    ai_industries = json.loads(event[10]) if event[10] else []
+                    
+                    events_list.append({
+                        'id': event[0],
+                        'date': event[1],
+                        'title': event[2],
+                        'event_type': event[3],
+                        'department': event[4] if event[4] else '',
+                        'policy_level': event[5] if event[5] else '',
+                        'impact_level': event[6] if event[6] else '',
+                        'source_url': event[7] if event[7] else '',
+                        'created_at': event[8] if event[8] else '',
+                        'content_type': event[9] if event[9] else '政策',
+                        'ai_industries': ai_industries,
+                        'ai_summary': event[11] if event[11] else '',
+                        'ai_confidence': event[12] if event[12] else None
+                    })
+                
+                logger.info(f"根据行业 {industries} 找到 {len(events_list)} 条相关政策")
+                return events_list
+                
         except Exception as e:
             logger.error(f"获取相关政策失败: {e}")
             return []
-        finally:
-            conn.close()
     
     def get_stock_type(self, stock_code: str, stock_name: str = "") -> str:
         """获取股票类型"""

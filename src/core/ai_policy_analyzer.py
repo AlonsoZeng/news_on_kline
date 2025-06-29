@@ -11,6 +11,8 @@ from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 import time
 import re
+import sqlite3
+from contextlib import contextmanager
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -26,40 +28,55 @@ class AIPolicyAnalyzer:
         self.db_path = db_path
         self.init_analysis_table()
     
+    @contextmanager
+    def get_db_connection(self):
+        """获取数据库连接的上下文管理器"""
+        conn = None
+        try:
+            conn = sqlite3.connect(self.db_path)
+            conn.row_factory = sqlite3.Row
+            yield conn
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            raise e
+        finally:
+            if conn:
+                conn.close()
+    
     def init_analysis_table(self):
         """初始化分析结果表"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
-        # 创建政策分析结果表
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS policy_analysis (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                policy_id INTEGER NOT NULL,
-                industries TEXT,  -- JSON格式存储相关行业
-                analysis_summary TEXT,  -- 分析摘要
-                confidence_score REAL,  -- 置信度分数
-                content_quality TEXT DEFAULT 'title_only',  -- 分析时使用的内容质量: full/partial/title_only
-                full_content TEXT,  -- 存储政策原文完整内容
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (policy_id) REFERENCES policy_events (id)
-            )
-        ''')
-        
-        # 检查并添加新字段（兼容旧数据库）
-        cursor.execute("PRAGMA table_info(policy_analysis)")
-        columns = [column[1] for column in cursor.fetchall()]
-        
-        if 'content_quality' not in columns:
-            cursor.execute('ALTER TABLE policy_analysis ADD COLUMN content_quality TEXT DEFAULT "title_only"')
-            logger.info("已添加content_quality字段到policy_analysis表")
+        with self.get_db_connection() as conn:
+            cursor = conn.cursor()
             
-        if 'full_content' not in columns:
-            cursor.execute('ALTER TABLE policy_analysis ADD COLUMN full_content TEXT')
-            logger.info("已添加full_content字段到policy_analysis表")        
-        
-        conn.commit()
-        conn.close()
+            # 创建政策分析结果表
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS policy_analysis (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    policy_id INTEGER NOT NULL,
+                    industries TEXT,  -- JSON格式存储相关行业
+                    analysis_summary TEXT,  -- 分析摘要
+                    confidence_score REAL,  -- 置信度分数
+                    content_quality TEXT DEFAULT 'title_only',  -- 分析时使用的内容质量: full/partial/title_only
+                    full_content TEXT,  -- 存储政策原文完整内容
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (policy_id) REFERENCES policy_events (id)
+                )
+            ''')
+            
+            # 检查并添加新字段（兼容旧数据库）
+            cursor.execute("PRAGMA table_info(policy_analysis)")
+            columns = [column[1] for column in cursor.fetchall()]
+            
+            if 'content_quality' not in columns:
+                cursor.execute('ALTER TABLE policy_analysis ADD COLUMN content_quality TEXT DEFAULT "title_only"')
+                logger.info("已添加content_quality字段到policy_analysis表")
+                
+            if 'full_content' not in columns:
+                cursor.execute('ALTER TABLE policy_analysis ADD COLUMN full_content TEXT')
+                logger.info("已添加full_content字段到policy_analysis表")        
+            
+            conn.commit()
         logger.info("AI分析结果表初始化完成")
     
     def call_ai_api(self, prompt: str) -> Optional[Dict]:
@@ -328,19 +345,17 @@ class AIPolicyAnalyzer:
     def get_stored_policy_content(self, policy_id: int) -> Optional[str]:
         """从数据库获取已存储的政策原文内容"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            cursor.execute('SELECT full_content FROM policy_analysis WHERE policy_id = ?', (policy_id,))
-            result = cursor.fetchone()
-            
-            conn.close()
-            
-            if result and result[0]:
-                logger.info(f"从数据库获取到政策ID {policy_id} 的原文内容，长度: {len(result[0])}字符")
-                return result[0]
-            else:
-                logger.info(f"政策ID {policy_id} 没有存储的原文内容")
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('SELECT full_content FROM policy_analysis WHERE policy_id = ?', (policy_id,))
+                result = cursor.fetchone()
+                
+                if result and result[0]:
+                    logger.info(f"从数据库获取到政策ID {policy_id} 的原文内容，长度: {len(result[0])}字符")
+                    return result[0]
+                else:
+                    logger.info(f"政策ID {policy_id} 没有存储的原文内容")
                 return None
                 
         except Exception as e:
@@ -375,21 +390,20 @@ class AIPolicyAnalyzer:
     def batch_reanalyze_policies_with_stored_content(self, limit: int = 10) -> int:
         """批量重新分析有存储内容的政策"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # 获取有存储内容的政策
-            cursor.execute('''
-                SELECT pa.policy_id, pe.title, pe.event_type
-                FROM policy_analysis pa
-                JOIN policy_events pe ON pa.policy_id = pe.id
-                WHERE pa.full_content IS NOT NULL AND pa.full_content != ''
-                ORDER BY pe.date DESC
-                LIMIT ?
-            ''', (limit,))
-            
-            policies = cursor.fetchall()
-            conn.close()
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # 获取有存储内容的政策
+                cursor.execute('''
+                    SELECT pa.policy_id, pe.title, pe.event_type
+                    FROM policy_analysis pa
+                    JOIN policy_events pe ON pa.policy_id = pe.id
+                    WHERE pa.full_content IS NOT NULL AND pa.full_content != ''
+                    ORDER BY pe.date DESC
+                    LIMIT ?
+                ''', (limit,))
+                
+                policies = cursor.fetchall()
             
             if not policies:
                 logger.info("没有找到有存储内容的政策")
@@ -427,47 +441,46 @@ class AIPolicyAnalyzer:
     def save_analysis_result(self, policy_id: int, analysis_result: Dict) -> bool:
         """保存分析结果到数据库"""
         try:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            
-            # 检查是否已存在分析结果
-            cursor.execute('SELECT id FROM policy_analysis WHERE policy_id = ?', (policy_id,))
-            existing = cursor.fetchone()
-            
-            if existing:
-                # 更新现有记录
-                cursor.execute('''
-                    UPDATE policy_analysis 
-                    SET industries = ?, analysis_summary = ?, confidence_score = ?, content_quality = ?, full_content = ?,
-                        created_at = CURRENT_TIMESTAMP
-                    WHERE policy_id = ?
-                ''', (
-                    json.dumps(analysis_result['industries'], ensure_ascii=False),
-                    analysis_result['analysis_summary'],
-                    analysis_result['confidence_score'],
-                    analysis_result.get('content_quality', 'title_only'),
-                    analysis_result.get('full_content', ''),
-                    policy_id
-                ))
-                logger.info(f"更新政策ID {policy_id} 的分析结果")
-            else:
-                # 插入新记录
-                cursor.execute('''
-                    INSERT INTO policy_analysis 
-                    (policy_id, industries, analysis_summary, confidence_score, content_quality, full_content)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (
-                    policy_id,
-                    json.dumps(analysis_result['industries'], ensure_ascii=False),
-                    analysis_result['analysis_summary'],
-                    analysis_result['confidence_score'],
-                    analysis_result.get('content_quality', 'title_only'),
-                    analysis_result.get('full_content', '')
-                ))
-                logger.info(f"保存政策ID {policy_id} 的分析结果")
-            
-            conn.commit()
-            conn.close()
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # 检查是否已存在分析结果
+                cursor.execute('SELECT id FROM policy_analysis WHERE policy_id = ?', (policy_id,))
+                existing = cursor.fetchone()
+                
+                if existing:
+                    # 更新现有记录
+                    cursor.execute('''
+                        UPDATE policy_analysis 
+                        SET industries = ?, analysis_summary = ?, confidence_score = ?, content_quality = ?, full_content = ?,
+                            created_at = CURRENT_TIMESTAMP
+                        WHERE policy_id = ?
+                    ''', (
+                        json.dumps(analysis_result['industries'], ensure_ascii=False),
+                        analysis_result['analysis_summary'],
+                        analysis_result['confidence_score'],
+                        analysis_result.get('content_quality', 'title_only'),
+                        analysis_result.get('full_content', ''),
+                        policy_id
+                    ))
+                    logger.info(f"更新政策ID {policy_id} 的分析结果")
+                else:
+                    # 插入新记录
+                    cursor.execute('''
+                        INSERT INTO policy_analysis 
+                        (policy_id, industries, analysis_summary, confidence_score, content_quality, full_content)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    ''', (
+                        policy_id,
+                        json.dumps(analysis_result['industries'], ensure_ascii=False),
+                        analysis_result['analysis_summary'],
+                        analysis_result['confidence_score'],
+                        analysis_result.get('content_quality', 'title_only'),
+                        analysis_result.get('full_content', '')
+                    ))
+                    logger.info(f"保存政策ID {policy_id} 的分析结果")
+                
+                conn.commit()
             return True
             
         except Exception as e:
@@ -484,21 +497,22 @@ class AIPolicyAnalyzer:
         Returns:
             成功分析的政策数量
         """
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         try:
-            # 获取未分析的政策（包括source_url）
-            cursor.execute('''
-                SELECT pe.id, pe.title, pe.content, pe.event_type, pe.source_url
-                FROM policy_events pe
-                LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id
-                WHERE pa.policy_id IS NULL
-                ORDER BY pe.date DESC
-                LIMIT ?
-            ''', (limit,))
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # 获取未分析的政策（包括source_url）
+                cursor.execute('''
+                    SELECT pe.id, pe.title, pe.content, pe.event_type, pe.source_url
+                    FROM policy_events pe
+                    LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id
+                    WHERE pa.policy_id IS NULL
+                    ORDER BY pe.date DESC
+                    LIMIT ?
+                ''', (limit,))
+                
+                policies = cursor.fetchall()
             
-            policies = cursor.fetchall()
             success_count = 0
             
             for policy in policies:
@@ -531,8 +545,6 @@ class AIPolicyAnalyzer:
         except Exception as e:
             logger.error(f"批量分析政策时发生错误: {str(e)}")
             return 0
-        finally:
-            conn.close()
     
     async def analyze_unprocessed_policies_async(self, limit: int = 20, max_concurrent: int = 5) -> int:
         """
@@ -546,20 +558,20 @@ class AIPolicyAnalyzer:
             成功分析的政策数量
         """
         # 获取未分析的政策
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         try:
-            cursor.execute('''
-                SELECT pe.id, pe.title, pe.content, pe.event_type, pe.source_url
-                FROM policy_events pe
-                LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id
-                WHERE pa.policy_id IS NULL
-                ORDER BY pe.date DESC
-                LIMIT ?
-            ''', (limit,))
-            
-            policies = cursor.fetchall()
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    SELECT pe.id, pe.title, pe.content, pe.event_type, pe.source_url
+                    FROM policy_events pe
+                    LEFT JOIN policy_analysis pa ON pe.id = pa.policy_id
+                    WHERE pa.policy_id IS NULL
+                    ORDER BY pe.date DESC
+                    LIMIT ?
+                ''', (limit,))
+                
+                policies = cursor.fetchall()
             
             if not policies:
                 logger.info("没有需要分析的政策")
@@ -705,8 +717,6 @@ class AIPolicyAnalyzer:
         except Exception as e:
             logger.error(f"异步批量分析政策时发生错误: {str(e)}")
             return 0
-        finally:
-            conn.close()
     
     async def fetch_policy_content_async(self, source_url: str) -> Optional[str]:
         """
@@ -776,75 +786,71 @@ class AIPolicyAnalyzer:
     
     def get_analysis_result(self, policy_id: int) -> Optional[Dict]:
         """获取指定政策的分析结果"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         try:
-            cursor.execute('''
-                SELECT industries, analysis_summary, confidence_score, content_quality, created_at
-                FROM policy_analysis
-                WHERE policy_id = ?
-            ''', (policy_id,))
-            
-            result = cursor.fetchone()
-            
-            if result:
-                return {
-                    'industries': json.loads(result[0]) if result[0] else [],
-                    'analysis_summary': result[1],
-                    'confidence_score': result[2],
-                    'content_quality': result[3] if result[3] else 'title_only',
-                    'created_at': result[4]
-                }
-            else:
-                return None
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
                 
+                cursor.execute('''
+                    SELECT industries, analysis_summary, confidence_score, content_quality, created_at
+                    FROM policy_analysis
+                    WHERE policy_id = ?
+                ''', (policy_id,))
+                
+                result = cursor.fetchone()
+                
+                if result:
+                    return {
+                        'industries': json.loads(result[0]) if result[0] else [],
+                        'analysis_summary': result[1],
+                        'confidence_score': result[2],
+                        'content_quality': result[3] if result[3] else 'title_only',
+                        'created_at': result[4]
+                    }
+                else:
+                    return None
+                    
         except Exception as e:
             logger.error(f"获取分析结果失败: {str(e)}")
             return None
-        finally:
-            conn.close()
     
     def get_policies_by_stock(self, stock_code: str) -> List[Dict]:
         """根据股票代码查找相关政策"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        
         try:
-            cursor.execute('''
-                SELECT pe.id, pe.title, pe.date, pe.event_type, pa.industries, pa.analysis_summary
-                FROM policy_events pe
-                JOIN policy_analysis pa ON pe.id = pa.policy_id
-                WHERE pa.industries LIKE ?
-                ORDER BY pe.date DESC
-            ''', (f'%{stock_code}%',))
-            
-            results = cursor.fetchall()
-            policies = []
-            
-            for result in results:
-                try:
-                    industries = json.loads(result[4]) if result[4] else []
-                    # 检查是否包含相关行业
-                    if any(stock_code in str(industry) for industry in industries):
-                        policies.append({
-                            'id': result[0],
-                            'title': result[1],
-                            'date': result[2],
-                            'event_type': result[3],
-                            'industries': industries,
-                            'analysis_summary': result[5]
-                        })
-                except json.JSONDecodeError:
-                    continue
-            
-            return policies
-            
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                cursor.execute('''
+                    SELECT pe.id, pe.title, pe.date, pe.event_type, pa.industries, pa.analysis_summary
+                    FROM policy_events pe
+                    JOIN policy_analysis pa ON pe.id = pa.policy_id
+                    WHERE pa.industries LIKE ?
+                    ORDER BY pe.date DESC
+                ''', (f'%{stock_code}%',))
+                
+                results = cursor.fetchall()
+                policies = []
+                
+                for result in results:
+                    try:
+                        industries = json.loads(result[4]) if result[4] else []
+                        # 检查是否包含相关行业
+                        if any(stock_code in str(industry) for industry in industries):
+                            policies.append({
+                                'id': result[0],
+                                'title': result[1],
+                                'date': result[2],
+                                'event_type': result[3],
+                                'industries': industries,
+                                'analysis_summary': result[5]
+                            })
+                    except json.JSONDecodeError:
+                        continue
+                
+                return policies
+                
         except Exception as e:
             logger.error(f"查询股票相关政策失败: {str(e)}")
             return []
-        finally:
-            conn.close()
 
 
 if __name__ == "__main__":

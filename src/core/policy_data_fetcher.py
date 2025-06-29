@@ -19,8 +19,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class PolicyDataFetcher:
-    def __init__(self, db_path='events.db'):
+    def __init__(self, db_path='events.db', max_pages=10):
         self.db_path = db_path
+        self.max_pages = max_pages  # 统一的页面数量控制参数，默认10页
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -177,14 +178,16 @@ class PolicyDataFetcher:
         except Exception as e:
             logger.error(f"记录{source_name}抓取状态时出错: {e}")
     
-    def fetch_gov_cn_policies(self, days_back=30, target_month=None, max_pages=30):
+    def fetch_gov_cn_policies(self, days_back=30, target_month=None, max_pages=None):
         """从中国政府网获取政策数据
         
         Args:
             days_back: 获取最近多少天的数据
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，如果为None则使用实例的默认值
         """
+        if max_pages is None:
+            max_pages = self.max_pages
         source_name = "gov_cn"
         
         # 检查是否应该跳过抓取
@@ -309,13 +312,15 @@ class PolicyDataFetcher:
         self.record_fetch_status(source_name, 'success', len(policies))
         return policies
     
-    def fetch_mof_policies(self, target_month=None, max_pages=30):
+    def fetch_mof_policies(self, target_month=None, max_pages=None):
         """从财政部获取政策数据
         
         Args:
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，如果为None则使用实例的默认值
         """
+        if max_pages is None:
+            max_pages = self.max_pages
         source_name = "mof"
         
         # 检查是否应该跳过抓取
@@ -444,13 +449,15 @@ class PolicyDataFetcher:
         self.record_fetch_status(source_name, 'success', len(policies))
         return policies
     
-    def fetch_ndrc_policies(self, target_month=None, max_pages=30):
+    def fetch_ndrc_policies(self, target_month=None, max_pages=None):
         """从国家发改委获取政策数据
         
         Args:
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，如果为None则使用实例的默认值
         """
+        if max_pages is None:
+            max_pages = self.max_pages
         source_name = "ndrc"
         
         # 检查是否应该跳过抓取
@@ -533,7 +540,7 @@ class PolicyDataFetcher:
             
             # 尝试分页抓取（发改委令分页格式：第一页index.html，第二页index_1.html，第三页index_2.html...）
             base_page_url = "https://www.ndrc.gov.cn/xxgk/zcfb/fzggwl/index"
-            for page in range(1, min(max_pages + 1, 11)):  # 限制在10页内
+            for page in range(1, max_pages + 1):  # 使用统一的页面数量控制
                 if page == 1:
                     url = f"{base_page_url}.html"  # 第一页
                 else:
@@ -910,12 +917,14 @@ class PolicyDataFetcher:
         
         conn.close()
     
-    def fetch_csrc_policies(self, max_pages=50):
+    def fetch_csrc_policies(self, max_pages=None):
         """从证监会API获取政策数据
         
         Args:
-            max_pages: 最大抓取分页数，默认50页
+            max_pages: 最大抓取分页数，如果为None则使用实例的默认值
         """
+        if max_pages is None:
+            max_pages = self.max_pages
         source_name = "csrc"
         
         # 检查是否应该跳过抓取
@@ -1102,13 +1111,15 @@ class PolicyDataFetcher:
         else:
             return '证券监管'
     
-    def fetch_all_policies(self, target_month=None, max_pages=30):
+    def fetch_all_policies(self, target_month=None, max_pages=None):
         """获取所有来源的政策数据
         
         Args:
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，如果为None则使用实例的默认值
         """
+        if max_pages is None:
+            max_pages = self.max_pages
         if target_month:
             logger.info(f"开始获取 {target_month} 月份的政策数据，最多抓取 {max_pages} 页...")
         else:
@@ -1120,7 +1131,7 @@ class PolicyDataFetcher:
         gov_policies = self.fetch_gov_cn_policies(target_month=target_month, max_pages=max_pages)
         ndrc_policies = self.fetch_ndrc_policies(target_month=target_month, max_pages=max_pages)
         mof_policies = self.fetch_mof_policies(target_month=target_month, max_pages=max_pages)
-        csrc_policies = self.fetch_csrc_policies(max_pages=50)  # 证监会抓取50页
+        csrc_policies = self.fetch_csrc_policies(max_pages=max_pages)  # 证监会也使用统一的页面数量
         
         all_policies.extend(gov_policies)
         all_policies.extend(ndrc_policies)
@@ -1144,13 +1155,15 @@ class PolicyDataFetcher:
         logger.info(f"原始数据 {len(all_policies)} 条，去重后 {len(unique_policies)} 条唯一政策数据")
         return unique_policies
     
-    def run_data_collection(self, target_month=None, max_pages=30):
+    def run_data_collection(self, target_month=None, max_pages=None):
         """运行数据收集流程
         
         Args:
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，如果为None则使用实例的默认值
         """
+        if max_pages is None:
+            max_pages = self.max_pages
         if target_month:
             logger.info(f"开始收集 {target_month} 月份的政策数据，最多抓取 {max_pages} 页")
         else:

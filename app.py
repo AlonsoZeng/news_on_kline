@@ -50,7 +50,7 @@ class AppConfig:
         
     def _get_tushare_token(self):
         """获取TuShare Token"""
-        token = os.getenv('TUSHARE_TOKEN', 'Yf6a8c4b66eaeb4e9ff4fdcd8575e1f7acf8c268079e132247f1af168')
+        token = os.getenv('TUSHARE_TOKEN')
         if token == 'YOUR_TUSHARE_TOKEN' or not token:
             print("警告：请设置您的TuShare Token (环境变量 TUSHARE_TOKEN)，否则无法获取数据。")
         return token
@@ -338,8 +338,21 @@ def fetch_economic_events(api_token, country_code, date_from, date_to):
         return []
 
     try:
-        client = APIClient(api_token)
-        events = client.get_economic_events(country=country_code, from_date=date_from, to_date=date_to)
+        import requests
+        # 使用EODHD经济事件API的正确端点
+        url = f'https://eodhd.com/api/economic-events'
+        params = {
+            'api_token': api_token,
+            'fmt': 'json',
+            'country': country_code,
+            'from': date_from,
+            'to': date_to
+        }
+        
+        response = requests.get(url, params=params, timeout=30)
+        response.raise_for_status()
+        events = response.json()
+        
         processed_events = []
         if isinstance(events, list):
             for event in events:

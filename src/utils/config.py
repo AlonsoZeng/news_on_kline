@@ -136,8 +136,9 @@ class Config:
 def init_config() -> bool:
     """初始化配置"""
     try:
-        # 尝试加载 .env 文件
-        env_file = os.path.join(os.path.dirname(__file__), '.env')
+        # 尝试加载 .env 文件 - 修正路径到项目根目录
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        env_file = os.path.join(project_root, '.env')
         if os.path.exists(env_file):
             with open(env_file, 'r', encoding='utf-8') as f:
                 for line in f:

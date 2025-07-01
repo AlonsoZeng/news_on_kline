@@ -7,6 +7,7 @@ import requests
 import sqlite3
 import time
 from contextlib import contextmanager
+import openai
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,10 @@ class StockIndustryAnalyzer:
     def __init__(self, api_key: str, db_path: str):
         self.api_key = api_key
         self.db_path = db_path
-        self.api_url = "https://api.siliconflow.cn/v1/chat/completions"
+        self.api_url = "https://api.siliconflow.cn/v1/completions"
+        # 设置openai配置（适用于0.8.0版本）
+        openai.api_key = self.api_key
+        openai.api_base = "https://api.siliconflow.cn"
         self.init_database()
     
     @contextmanager
@@ -352,11 +356,6 @@ class StockIndustryAnalyzer:
 - 置信度要基于信息完整度客观评估
 """
         
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
         # 根据股票类型调整系统提示词
         if stock_type == "ETF":
             system_content = "你是一个专业的ETF基金分析师，擅长分析A股市场的ETF基金行业分类。请基于ETF的详细信息（包括名称、描述、投资范围等），准确识别其跟踪的行业板块。你需要仔细分析提供的所有信息，给出详细的判断依据。"
@@ -365,28 +364,17 @@ class StockIndustryAnalyzer:
         else:
             system_content = "你是一个专业的股票行业分析师，擅长分析A股市场的上市公司行业分类。请基于公司的详细信息（包括名称、描述、经营范围、主营业务等），准确识别其主营业务所属行业。你需要仔细分析提供的所有信息，给出详细的判断依据。"
         
-        data = {
-            "model": "deepseek-ai/DeepSeek-V2.5",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": system_content
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "temperature": 0.3,
-            "max_tokens": 1000
-        }
-        
         try:
-            response = requests.post(self.api_url, headers=headers, json=data, timeout=30)
-            response.raise_for_status()
+            # 使用旧版本openai API调用
+            full_prompt = system_content + "\n\n" + prompt
+            response = openai.Completion.create(
+                model="deepseek-ai/DeepSeek-V2.5",
+                prompt=full_prompt,
+                temperature=0.3,
+                max_tokens=1000
+            )
             
-            result = response.json()
-            content = result['choices'][0]['message']['content']
+            content = response['choices'][0]['text']
             
             # 尝试解析JSON
             try:
@@ -408,9 +396,8 @@ class StockIndustryAnalyzer:
             except json.JSONDecodeError as e:
                 logger.error(f"解析AI返回的JSON失败: {e}, 内容: {content}")
                 
-        except requests.exceptions.RequestException as e:
-            logger.error(f"调用AI API失败: {e}")
         except Exception as e:
+            logger.error(f"调用AI API失败: {e}")
             logger.error(f"分析股票行业时发生异常: {e}")
         
         return None

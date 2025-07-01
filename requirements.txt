@@ -12,3 +12,4 @@ lxml==4.9.3
 eodhd==1.0.0
 aiohttp>=3.7.4
 asyncio>=3.4.3
+openai==0.8.0

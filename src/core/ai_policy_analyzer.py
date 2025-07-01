@@ -1,32 +1,320 @@
-import sqlite3
+# 建议整理导入
+from typing import Dict, List, Optional
+import asyncio
 import json
 import logging
-import time
-import requests
-import asyncio
-import aiohttp
-from typing import Dict, List, Optional
-from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
-from bs4 import BeautifulSoup
-import time
+import random
 import re
 import sqlite3
+import time
 from contextlib import contextmanager
+from datetime import datetime
+from functools import wraps
+from concurrent.futures import ThreadPoolExecutor
+
+import aiohttp
+import openai
+import requests
+from bs4 import BeautifulSoup
+
+# 配置常量
+class Config:
+    # API配置
+    DEFAULT_API_BASE_URL = "https://api.siliconflow.cn"
+    DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+    
+    # 重试配置
+    DEFAULT_MAX_RETRIES = 3
+    DEFAULT_BASE_DELAY = 1
+    DEFAULT_MAX_DELAY = 60
+    
+    # 速率限制配置
+    DEFAULT_MAX_CALLS = 10
+    DEFAULT_TIME_WINDOW = 60
+    
+    # 内容抓取配置
+    REQUEST_TIMEOUT = 10
+    MIN_CONTENT_LENGTH = 200
+    FULL_CONTENT_THRESHOLD = 500
+    PARTIAL_CONTENT_THRESHOLD = 100
+    MAX_CONTENT_LENGTH = 3000
+    BATCH_DELAY = 0.8  # 批量处理间隔延迟（秒）
+    
+    # 请求头配置
+    DEFAULT_HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
+    
+    # 内容选择器
+    CONTENT_SELECTORS = [
+        '.content', '.article-content', '.policy-content', '.main-content',
+        '#content', '#article-content', '#policy-content', '#main-content',
+        '.text', '.article-text', '.policy-text',
+        'article', '.article', '.post-content',
+        '.TRS_Editor', '.Custom_UnionStyle',  # 政府网站常用的编辑器类名
+        '[class*="content"]', '[class*="article"]', '[class*="text"]'
+    ]
+    
+    # 过滤关键词
+    FILTER_KEYWORDS = ['导航', '菜单', '首页', '返回', '上一页', '下一页', '版权', '联系我们', 'Copyright']
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def retry_with_backoff(max_retries=Config.DEFAULT_MAX_RETRIES, 
+                      base_delay=Config.DEFAULT_BASE_DELAY, 
+                      max_delay=Config.DEFAULT_MAX_DELAY):
+    """重试装饰器，带指数退避和随机抖动"""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(*args, **kwargs)
+                except (requests.exceptions.Timeout, 
+                       requests.exceptions.ConnectionError,
+                       requests.exceptions.RequestException,
+                       openai.error.RateLimitError,
+                       openai.error.APIError) as e:
+                    last_exception = e
+                    if attempt == max_retries - 1:
+                        logger.error(f"API调用失败，已重试{max_retries}次: {str(e)}")
+                        break
+                    
+                    # 指数退避 + 随机抖动
+                    delay = min(base_delay * (2 ** attempt) + random.uniform(0, 1), max_delay)
+                    logger.warning(f"API调用失败，{delay:.2f}秒后重试 (第{attempt+1}次): {str(e)}")
+                    time.sleep(delay)
+                except Exception as e:
+                    logger.error(f"API调用发生未预期异常: {str(e)}")
+                    return None
+            
+            # 如果所有重试都失败，记录最后一个异常
+            if last_exception:
+                logger.error(f"重试失败，最后异常: {str(last_exception)}")
+            return None
+        return wrapper
+    return decorator
+
+class RateLimiter:
+    """API速率限制器"""
+    def __init__(self, max_calls=Config.DEFAULT_MAX_CALLS, time_window=Config.DEFAULT_TIME_WINDOW):
+        self.max_calls = max_calls
+        self.time_window = time_window
+        self.calls = []
+        self._lock = asyncio.Lock() if hasattr(asyncio, 'current_task') else None
+    
+    async def wait_if_needed(self):
+        """检查是否需要等待以满足速率限制"""
+        if self._lock:
+            async with self._lock:
+                await self._check_and_wait()
+        else:
+            self._check_and_wait_sync()
+    
+    def _check_and_wait_sync(self):
+        """同步版本的速率检查"""
+        now = time.time()
+        # 移除时间窗口外的调用记录
+        self.calls = [call_time for call_time in self.calls if call_time > now - self.time_window]
+        
+        if len(self.calls) >= self.max_calls:
+            sleep_time = self.time_window - (now - self.calls[0])
+            if sleep_time > 0:
+                logger.info(f"达到速率限制，等待 {sleep_time:.2f} 秒")
+                time.sleep(sleep_time)
+        
+        self.calls.append(now)
+    
+    async def _check_and_wait(self):
+        """异步版本的速率检查"""
+        now = time.time()
+        # 移除时间窗口外的调用记录
+        self.calls = [call_time for call_time in self.calls if call_time > now - self.time_window]
+        
+        if len(self.calls) >= self.max_calls:
+            sleep_time = self.time_window - (now - self.calls[0])
+            if sleep_time > 0:
+                logger.info(f"达到速率限制，等待 {sleep_time:.2f} 秒")
+                await asyncio.sleep(sleep_time)
+        
+        self.calls.append(now)
+
 class AIPolicyAnalyzer:
     """AI政策分析器，使用硅基流动API分析政策新闻的相关行业、板块、个股"""
     
-    def __init__(self, api_key: str, db_path: str = 'events.db'):
+    def __init__(self, api_key: str, db_path: str = 'events.db', model: str = None):
         self.api_key = api_key
-        self.api_base_url = "https://api.siliconflow.cn/v1"
-        self.model = "Qwen/Qwen3-8B"
+        self.api_base_url = Config.DEFAULT_API_BASE_URL
+        self.model = model or Config.DEFAULT_MODEL
         self.db_path = db_path
+        self.rate_limiter = RateLimiter()
+        
+        # 设置openai配置（适用于0.8.0版本）
+        openai.api_key = self.api_key
+        openai.api_base = self.api_base_url
+        
         self.init_analysis_table()
+    
+    def _create_failed_response(self, reason: str, content_quality: str = "title_only", 
+                               full_content: str = "") -> Dict:
+        """创建标准的分析失败响应"""
+        return {
+            'industries': ["分析失败"],
+            'analysis_summary': reason,
+            'confidence_score': 0.0,
+            'content_quality': content_quality,
+            'full_content': full_content,
+            'analysis_status': 'failed'
+        }
+    
+    def _parse_api_response(self, ai_response: str) -> Optional[Dict]:
+        """解析AI API响应的JSON内容"""
+        try:
+            # 尝试解析JSON
+            # 有时AI会在JSON前后添加说明文字，需要提取JSON部分
+            start_idx = ai_response.find('{')
+            
+            if start_idx == -1:
+                logger.error("AI返回结果中未找到JSON开始标记")
+                return None
+            
+            # 使用括号计数来找到完整的JSON对象
+            brace_count = 0
+            end_idx = start_idx
+            
+            for i in range(start_idx, len(ai_response)):
+                if ai_response[i] == '{':
+                    brace_count += 1
+                elif ai_response[i] == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        end_idx = i + 1
+                        break
+            
+            if brace_count != 0:
+                logger.error("AI返回结果中JSON格式不完整，括号不匹配")
+                return None
+            
+            json_str = ai_response[start_idx:end_idx]
+            logger.debug(f"提取的JSON字符串: {json_str[:200]}...")
+            
+            result = json.loads(json_str)
+            
+            # 验证必要字段
+            required_fields = ['industries', 'analysis_summary', 'confidence_score']
+            for field in required_fields:
+                if field not in result:
+                    logger.warning(f"AI返回结果缺少必要字段: {field}")
+                    return None
+            
+            # 数据类型验证和清理
+            if not isinstance(result['industries'], list):
+                result['industries'] = [str(result['industries'])]
+            
+            if not isinstance(result['confidence_score'], (int, float)):
+                try:
+                    result['confidence_score'] = float(result['confidence_score'])
+                except (ValueError, TypeError):
+                    result['confidence_score'] = 0.5
+            
+            # 确保置信度在合理范围内
+            result['confidence_score'] = max(0.0, min(1.0, result['confidence_score']))
+            
+            return result
+                
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON解析失败: {str(e)}")
+            logger.error(f"原始AI响应: {ai_response[:500]}...")
+            return None
+        except Exception as e:
+            logger.error(f"解析AI返回结果时发生异常: {str(e)}")
+            return None
+    
+    def _build_analysis_prompt(self, title: str, content: str, event_type: str, 
+                              source_url: str = "", has_full_content: bool = False) -> str:
+        """构建分析prompt模板"""
+        base_analysis_request = """
+请从以下几个方面进行分析：
+1. 相关行业：列出可能受到影响的主要行业（最多5个）
+2. 影响程度：评估对股市的整体影响程度（正面/负面/中性）
+3. 分析摘要：{summary_instruction}
+4. 置信度：对分析结果的置信度评分（0-1之间{confidence_note}）
+
+请以JSON格式返回结果：
+{{
+    "industries": ["行业1", "行业2", ...],
+    "impact_type": "正面/负面/中性",
+    "analysis_summary": "分析摘要",
+    "confidence_score": {default_confidence}
+}}
+"""
+        
+        if has_full_content:
+            truncated_content = content[:Config.MAX_CONTENT_LENGTH]
+            truncation_note = '...(内容过长已截断)' if len(content) > Config.MAX_CONTENT_LENGTH else ''
+            
+            return f"""
+请分析以下政策对中国股市的影响：
+
+标题：{title}
+事件类型：{event_type if event_type else '未知'}
+
+完整内容：
+{truncated_content}{truncation_note}
+
+{base_analysis_request.format(
+    summary_instruction="基于完整政策内容，详细说明政策的主要影响点和逻辑",
+    confidence_note="",
+    default_confidence="0.8"
+)}
+"""
+        else:
+            return f"""
+请分析以下政策对中国股市的影响：
+
+标题：{title}
+内容：{content if content else '无详细内容'}
+事件类型：{event_type if event_type else '未知'}
+原文链接：{source_url if source_url else '无'}
+
+注意：由于缺乏详细政策内容，请基于标题进行初步分析，并在置信度评分中体现这一限制。
+
+{base_analysis_request.format(
+    summary_instruction="简要说明政策的主要影响点和逻辑",
+    confidence_note="，由于缺乏详细内容应适当降低",
+    default_confidence="0.5"
+)}
+"""
+    
+    async def check_api_health(self):
+        """检查API健康状态"""
+        try:
+            # 使用旧版本openai API进行健康检查
+            response = openai.Completion.create(
+                model=self.model,
+                prompt="test",
+                max_tokens=10,
+                temperature=0.1
+            )
+            
+            if response and response.get('choices'):
+                logger.info("API健康检查通过")
+                return True
+            else:
+                logger.warning("API健康检查失败：响应格式异常")
+                return False
+                
+        except Exception as e:
+            logger.error(f"API健康检查异常: {e}")
+            return False
     
     @contextmanager
     def get_db_connection(self):
@@ -79,47 +367,27 @@ class AIPolicyAnalyzer:
             conn.commit()
         logger.info("AI分析结果表初始化完成")
     
+    @retry_with_backoff(max_retries=3, base_delay=2, max_delay=30)
     def call_ai_api(self, prompt: str) -> Optional[Dict]:
-        """调用硅基流动API"""
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        data = {
-            "model": self.model,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "你是一个专业的金融政策分析师，擅长分析政策新闻对股票市场的影响。请根据政策内容分析相关的行业、板块和个股。"
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "temperature": 0.3,
-            "max_tokens": 2000
-        }
+        """调用硅基流动API（带重试机制）"""
+        # 应用速率限制
+        self.rate_limiter._check_and_wait_sync()
         
         try:
-            response = requests.post(
-                f"{self.api_base_url}/chat/completions",
-                headers=headers,
-                json=data,
-                timeout=30
+            # 使用旧版本openai API调用
+            full_prompt = "你是一个专业的金融政策分析师，擅长分析政策新闻对股票市场的影响。请根据政策内容分析相关的行业、板块和个股。\n\n" + prompt
+            response = openai.Completion.create(
+                model=self.model,
+                prompt=full_prompt,
+                temperature=0.3,
+                max_tokens=2000
             )
             
-            if response.status_code == 200:
-                result = response.json()
-                return result
-            else:
-                logger.error(f"API调用失败，状态码: {response.status_code}, 响应: {response.text}")
-                return None
-                
+            return response
+            
         except Exception as e:
-            logger.error(f"API调用异常: {str(e)}")
-            return None
+            logger.error(f"API调用失败: {str(e)}")
+            raise Exception(str(e))
     
     def fetch_policy_content(self, source_url: str) -> str:
         """从政策原文链接抓取完整内容"""
@@ -129,17 +397,8 @@ class AIPolicyAnalyzer:
         try:
             logger.info(f"正在抓取政策原文: {source_url}")
             
-            # 设置请求头，模拟浏览器访问
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-                'Accept-Encoding': 'gzip, deflate',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1'
-            }
-            
-            response = requests.get(source_url, headers=headers, timeout=30)
+            # 使用配置的请求头
+            response = requests.get(source_url, headers=Config.DEFAULT_HEADERS, timeout=Config.REQUEST_TIMEOUT)
             response.encoding = 'utf-8'
             
             if response.status_code != 200:
@@ -152,15 +411,8 @@ class AIPolicyAnalyzer:
             for script in soup(["script", "style"]):
                 script.decompose()
             
-            # 尝试多种内容选择器，适配不同政府网站
-            content_selectors = [
-                '.content', '.article-content', '.policy-content', '.main-content',
-                '#content', '#article-content', '#policy-content', '#main-content',
-                '.text', '.article-text', '.policy-text',
-                'article', '.article', '.post-content',
-                '.TRS_Editor', '.Custom_UnionStyle',  # 政府网站常用的编辑器类名
-                '[class*="content"]', '[class*="article"]', '[class*="text"]'
-            ]
+            # 使用配置的内容选择器
+            content_selectors = Config.CONTENT_SELECTORS
             
             content_text = ""
             for selector in content_selectors:
@@ -168,7 +420,7 @@ class AIPolicyAnalyzer:
                     content_elem = soup.select_one(selector)
                     if content_elem:
                         content_text = content_elem.get_text(separator='\n', strip=True)
-                        if len(content_text) > 200:  # 确保抓取到足够的内容
+                        if len(content_text) > Config.MIN_CONTENT_LENGTH:  # 确保抓取到足够的内容
                             logger.info(f"成功抓取内容，长度: {len(content_text)}字符")
                             return content_text
                 except Exception as e:
@@ -183,13 +435,12 @@ class AIPolicyAnalyzer:
                 filtered_lines = []
                 for line in lines:
                     line = line.strip()
-                    if len(line) > 10 and not any(keyword in line for keyword in 
-                        ['导航', '菜单', '首页', '返回', '上一页', '下一页', '版权', '联系我们', 'Copyright']):
+                    if len(line) > 10 and not any(keyword in line for keyword in Config.FILTER_KEYWORDS):
                         filtered_lines.append(line)
                 
                 content_text = '\n'.join(filtered_lines)
                 
-            if len(content_text) > 100:
+            if len(content_text) > Config.MIN_CONTENT_LENGTH:
                 logger.info(f"从body提取内容，长度: {len(content_text)}字符")
                 return content_text
             else:
@@ -236,152 +487,79 @@ class AIPolicyAnalyzer:
                 logger.info(f"尝试从原文链接获取政策内容: {source_url}")
                 full_content = self.fetch_policy_content(source_url)
                 if full_content:
-                    if len(full_content) > 500:
+                    if len(full_content) > Config.FULL_CONTENT_THRESHOLD:
                         content_quality = "full"
-                    elif len(full_content) > 100:
+                    elif len(full_content) > Config.PARTIAL_CONTENT_THRESHOLD:
                         content_quality = "partial"
                     else:
                         content_quality = "title_only"
             elif content:
                 # 判断现有内容的质量
-                if len(content) > 500:
+                if len(content) > Config.FULL_CONTENT_THRESHOLD:
                     content_quality = "full"
-                elif len(content) > 100:
+                elif len(content) > Config.PARTIAL_CONTENT_THRESHOLD:
                     content_quality = "partial"
                 else:
                     content_quality = "title_only"
             
             # 构建分析prompt
-            if full_content and len(full_content) > 50:
-                prompt = f"""
-请分析以下政策对中国股市的影响：
-
-标题：{title}
-事件类型：{event_type if event_type else '未知'}
-
-完整内容：
-{full_content[:3000]}{'...(内容过长已截断)' if len(full_content) > 3000 else ''}
-
-请从以下几个方面进行分析：
-1. 相关行业：列出可能受到影响的主要行业（最多5个）
-2. 影响程度：评估对股市的整体影响程度（正面/负面/中性）
-3. 分析摘要：基于完整政策内容，详细说明政策的主要影响点和逻辑
-4. 置信度：对分析结果的置信度评分（0-1之间）
-
-请以JSON格式返回结果：
-{{
-    "industries": ["行业1", "行业2", ...],
-    "impact_type": "正面/负面/中性",
-    "analysis_summary": "分析摘要",
-    "confidence_score": 0.8
-}}
-"""
-            else:
-                prompt = f"""
-请分析以下政策对中国股市的影响：
-
-标题：{title}
-内容：{content if content else '无详细内容'}
-事件类型：{event_type if event_type else '未知'}
-原文链接：{source_url if source_url else '无'}
-
-注意：由于缺乏详细政策内容，请基于标题进行初步分析，并在置信度评分中体现这一限制。
-
-请从以下几个方面进行分析：
-1. 相关行业：列出可能受到影响的主要行业（最多5个）
-2. 影响程度：评估对股市的整体影响程度（正面/负面/中性）
-3. 分析摘要：简要说明政策的主要影响点和逻辑
-4. 置信度：对分析结果的置信度评分（0-1之间，由于缺乏详细内容应适当降低）
-
-请以JSON格式返回结果：
-{{
-    "industries": ["行业1", "行业2", ...],
-    "impact_type": "正面/负面/中性",
-    "analysis_summary": "分析摘要",
-    "confidence_score": 0.5
-}}
-"""
+            has_full_content = full_content and len(full_content) > 50
+            prompt = self._build_analysis_prompt(
+                title=title,
+                content=full_content if has_full_content else content,
+                event_type=event_type,
+                source_url=source_url,
+                has_full_content=has_full_content
+            )
         
             # 调用AI API
             api_result = self.call_ai_api(prompt)
             
             if not api_result:
                 # API调用失败，返回分析失败标识
-                return {
-                    'industries': ["分析失败"],
-                    'analysis_summary': "API调用失败，无法进行分析",
-                    'confidence_score': 0.0,
-                    'content_quality': content_quality,
-                    'full_content': full_content or '',
-                    'analysis_status': 'failed'
-                }
+                return self._create_failed_response(
+                    reason="API调用失败，无法进行分析",
+                    content_quality=content_quality,
+                    full_content=full_content or ''
+                )
                 
             # 提取AI回复内容
-            ai_response = api_result['choices'][0]['message']['content']
+            ai_response = api_result['choices'][0]['text']
             
             # 解析AI返回的结果
-            try:
-                # 尝试解析JSON
-                # 有时AI会在JSON前后添加说明文字，需要提取JSON部分
-                start_idx = ai_response.find('{')
-                end_idx = ai_response.rfind('}') + 1
+            result = self._parse_api_response(ai_response)
+            
+            if result:
+                # 处理分析结果中的行业信息
+                industries = result.get('industries', [])
                 
-                if start_idx != -1 and end_idx != -1:
-                    json_str = ai_response[start_idx:end_idx]
-                    result = json.loads(json_str)
-                else:
-                    result = json.loads(ai_response)
+                # 如果分析结果中没有行业或行业为空，标记为"分析后无相关行业"
+                if not industries or (isinstance(industries, list) and len(industries) == 0):
+                    industries = ["分析后无相关行业"]
                 
-                # 确保返回结果包含所需字段
-                if all(key in result for key in ['industries', 'analysis_summary', 'confidence_score']):
-                    # 处理分析结果中的行业信息
-                    industries = result.get('industries', [])
-                    
-                    # 如果分析结果中没有行业或行业为空，标记为"分析后无相关行业"
-                    if not industries or (isinstance(industries, list) and len(industries) == 0):
-                        industries = ["分析后无相关行业"]
-                    
-                    # 添加内容质量信息和完整内容
-                    result['industries'] = industries
-                    result['content_quality'] = content_quality
-                    result['full_content'] = full_content or ''
-                    result['analysis_status'] = 'success'
-                    logger.info(f"政策分析完成: {title[:50]}..., 内容质量: {content_quality}, 相关行业: {industries}")
-                    return result
-                else:
-                    logger.error(f"AI返回结果缺少必要字段: {result}")
-                    # 返回分析失败标识
-                    return {
-                        'industries': ["分析失败"],
-                        'analysis_summary': "AI返回结果格式错误，缺少必要字段",
-                        'confidence_score': 0.0,
-                        'content_quality': content_quality,
-                        'full_content': full_content or '',
-                        'analysis_status': 'failed'
-                    }
-            except json.JSONDecodeError as e:
-                logger.error(f"解析AI返回结果失败: {e}, 原始响应: {ai_response}")
-                # 返回分析失败标识
-                return {
-                    'industries': ["分析失败"],
-                    'analysis_summary': f"JSON解析失败: {str(e)}",
-                    'confidence_score': 0.0,
-                    'content_quality': content_quality,
-                    'full_content': full_content or '',
-                    'analysis_status': 'failed'
-                }
+                # 添加内容质量信息和完整内容
+                result['industries'] = industries
+                result['content_quality'] = content_quality
+                result['full_content'] = full_content or ''
+                result['analysis_status'] = 'success'
+                logger.info(f"政策分析完成: {title[:50]}..., 内容质量: {content_quality}, 相关行业: {industries}")
+                return result
+            else:
+                 # 解析失败，返回分析失败标识
+                 return self._create_failed_response(
+                     reason="AI返回结果解析失败",
+                     content_quality=content_quality,
+                     full_content=full_content or ''
+                 )
                 
         except Exception as e:
             logger.error(f"处理AI回复时发生异常: {str(e)}")
             # 返回分析失败标识
-            return {
-                'industries': ["分析失败"],
-                'analysis_summary': f"分析过程异常: {str(e)}",
-                'confidence_score': 0.0,
-                'content_quality': content_quality,
-                'full_content': full_content or '',
-                'analysis_status': 'failed'
-            }
+            return self._create_failed_response(
+                reason=f"分析过程异常: {str(e)}",
+                content_quality=content_quality,
+                full_content=full_content or ''
+            )
     
     def get_stored_policy_content(self, policy_id: int) -> Optional[str]:
         """从数据库获取已存储的政策原文内容"""
@@ -578,8 +756,8 @@ class AIPolicyAnalyzer:
                 else:
                     logger.warning(f"政策分析失败: {title[:50]}...")
                 
-                # 减少延迟时间，从2秒优化到0.8秒
-                time.sleep(0.8)
+                # 批量处理间隔延迟
+                time.sleep(Config.BATCH_DELAY)
             
             return success_count
             
@@ -777,7 +955,7 @@ class AIPolicyAnalyzer:
                             return None
                         
                         # 解析AI回复
-                        ai_response = api_result['choices'][0]['message']['content']
+                        ai_response = api_result['choices'][0]['text']
                         
                         try:
                             # 提取JSON部分
@@ -846,7 +1024,7 @@ class AIPolicyAnalyzer:
             return None
         
         try:
-            timeout = aiohttp.ClientTimeout(total=30)
+            timeout = aiohttp.ClientTimeout(total=60)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.get(source_url, ssl=False) as response:
                     if response.status == 200:
@@ -859,44 +1037,82 @@ class AIPolicyAnalyzer:
             logger.warning(f"异步获取政策内容失败 {source_url}: {str(e)}")
             return None
     
-    async def call_ai_api_async(self, prompt: str) -> Optional[Dict]:
+    async def call_ai_api_async(self, prompt: str, max_retries: int = 3) -> Optional[Dict]:
         """
-        异步调用AI API
+        异步调用AI API（带重试机制）
         
         Args:
             prompt: 分析提示词
+            max_retries: 最大重试次数
             
         Returns:
             API响应结果或None
         """
-        url = "https://api.siliconflow.cn/v1/chat/completions"
+        # 应用速率限制
+        await self.rate_limiter.wait_if_needed()
+        
+        url = "https://api.siliconflow.cn/v1/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
+        # 合并系统提示和用户提示
+        full_prompt = "你是一个专业的金融政策分析师，擅长分析政策新闻对股票市场的影响。请根据政策内容分析相关的行业、板块和个股。\n\n" + prompt
+        
         data = {
-            "model": "deepseek-ai/DeepSeek-V2.5",
-            "messages": [
-                {"role": "user", "content": prompt}
-            ],
+            "model": self.model,
+            "prompt": full_prompt,
             "temperature": 0.3,
-            "max_tokens": 1000
+            "max_tokens": 2000
         }
         
-        try:
-            timeout = aiohttp.ClientTimeout(total=60)
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.post(url, headers=headers, json=data) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        return result
-                    else:
-                        logger.error(f"异步AI API调用失败，状态码: {response.status}")
-                        return None
-        except Exception as e:
-            logger.error(f"异步AI API调用异常: {str(e)}")
-            return None
+        for attempt in range(max_retries):
+            try:
+                # 增加超时配置
+                timeout = aiohttp.ClientTimeout(
+                    total=120,  # 总超时时间
+                    connect=10,  # 连接超时
+                    sock_read=90  # 读取超时
+                )
+                
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    async with session.post(url, headers=headers, json=data) as response:
+                        if response.status == 200:
+                            result = await response.json()
+                            return result
+                        else:
+                            error_text = await response.text()
+                            error_msg = f"HTTP {response.status}: {error_text[:200]}"
+                            logger.error(f"异步API调用失败，状态码: {response.status}, 响应: {error_text[:200]}")
+                            
+                            if attempt == max_retries - 1:
+                                return None
+                            
+                            # 对于5xx错误进行重试
+                            if 500 <= response.status < 600:
+                                delay = Config.BASE_DELAY ** attempt + random.uniform(0, 1)
+                                logger.warning(f"服务器错误，{delay:.2f}秒后重试 (第{attempt+1}次)")
+                                await asyncio.sleep(delay)
+                                continue
+                            else:
+                                return None
+                                
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                if attempt == max_retries - 1:
+                    logger.error(f"异步API调用失败，已重试{max_retries}次: {str(e)}")
+                    return None
+                
+                # 指数退避
+                delay = min(2 ** attempt + random.uniform(0, 1), 30)
+                logger.warning(f"异步API调用异常，{delay:.2f}秒后重试 (第{attempt+1}次): {str(e)}")
+                await asyncio.sleep(delay)
+                
+            except Exception as e:
+                logger.error(f"异步API调用发生未预期异常: {str(e)}")
+                return None
+                
+        return None
     
     def get_analysis_result(self, policy_id: int) -> Optional[Dict]:
         """获取指定政策的分析结果"""

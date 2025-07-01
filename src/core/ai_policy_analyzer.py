@@ -306,7 +306,15 @@ class AIPolicyAnalyzer:
             api_result = self.call_ai_api(prompt)
             
             if not api_result:
-                return None
+                # API调用失败，返回分析失败标识
+                return {
+                    'industries': ["分析失败"],
+                    'analysis_summary': "API调用失败，无法进行分析",
+                    'confidence_score': 0.0,
+                    'content_quality': content_quality,
+                    'full_content': full_content or '',
+                    'analysis_status': 'failed'
+                }
                 
             # 提取AI回复内容
             ai_response = api_result['choices'][0]['message']['content']
@@ -326,21 +334,54 @@ class AIPolicyAnalyzer:
                 
                 # 确保返回结果包含所需字段
                 if all(key in result for key in ['industries', 'analysis_summary', 'confidence_score']):
+                    # 处理分析结果中的行业信息
+                    industries = result.get('industries', [])
+                    
+                    # 如果分析结果中没有行业或行业为空，标记为"分析后无相关行业"
+                    if not industries or (isinstance(industries, list) and len(industries) == 0):
+                        industries = ["分析后无相关行业"]
+                    
                     # 添加内容质量信息和完整内容
+                    result['industries'] = industries
                     result['content_quality'] = content_quality
                     result['full_content'] = full_content or ''
-                    logger.info(f"政策分析完成: {title[:50]}..., 内容质量: {content_quality}")
+                    result['analysis_status'] = 'success'
+                    logger.info(f"政策分析完成: {title[:50]}..., 内容质量: {content_quality}, 相关行业: {industries}")
                     return result
                 else:
                     logger.error(f"AI返回结果缺少必要字段: {result}")
-                    return None
+                    # 返回分析失败标识
+                    return {
+                        'industries': ["分析失败"],
+                        'analysis_summary': "AI返回结果格式错误，缺少必要字段",
+                        'confidence_score': 0.0,
+                        'content_quality': content_quality,
+                        'full_content': full_content or '',
+                        'analysis_status': 'failed'
+                    }
             except json.JSONDecodeError as e:
                 logger.error(f"解析AI返回结果失败: {e}, 原始响应: {ai_response}")
-                return None
+                # 返回分析失败标识
+                return {
+                    'industries': ["分析失败"],
+                    'analysis_summary': f"JSON解析失败: {str(e)}",
+                    'confidence_score': 0.0,
+                    'content_quality': content_quality,
+                    'full_content': full_content or '',
+                    'analysis_status': 'failed'
+                }
                 
         except Exception as e:
             logger.error(f"处理AI回复时发生异常: {str(e)}")
-            return None
+            # 返回分析失败标识
+            return {
+                'industries': ["分析失败"],
+                'analysis_summary': f"分析过程异常: {str(e)}",
+                'confidence_score': 0.0,
+                'content_quality': content_quality,
+                'full_content': full_content or '',
+                'analysis_status': 'failed'
+            }
     
     def get_stored_policy_content(self, policy_id: int) -> Optional[str]:
         """从数据库获取已存储的政策原文内容"""
@@ -544,6 +585,79 @@ class AIPolicyAnalyzer:
             
         except Exception as e:
             logger.error(f"批量分析政策时发生错误: {str(e)}")
+            return 0
+    
+    def analyze_failed_and_empty_policies(self, limit: int = 10) -> int:
+        """
+        批量重新分析失败的政策和无相关行业的政策
+        
+        Args:
+            limit: 每次处理的政策数量限制
+            
+        Returns:
+            成功分析的政策数量
+        """
+        try:
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # 获取需要重新分析的政策：分析失败或无相关行业的
+                cursor.execute('''
+                    SELECT pe.id, pe.title, pe.content, pe.event_type, pe.source_url, pa.industries
+                    FROM policy_events pe
+                    JOIN policy_analysis pa ON pe.id = pa.policy_id
+                    WHERE pa.industries LIKE '%分析失败%' OR pa.industries LIKE '%分析后无相关行业%'
+                    ORDER BY pe.date DESC
+                    LIMIT ?
+                ''', (limit,))
+                
+                policies = cursor.fetchall()
+            
+            if not policies:
+                logger.info("没有需要重新分析的政策")
+                return 0
+            
+            success_count = 0
+            
+            for policy in policies:
+                policy_id, title, content, event_type, source_url, old_industries = policy
+                
+                logger.info(f"重新分析政策: {title[:50]}... (原分析结果: {old_industries})")
+                
+                # 使用完整版本的分析方法
+                analysis_result = self.analyze_policy_with_full_content(
+                    policy_id=policy_id,
+                    title=title,
+                    source_url=source_url or "",
+                    content=content or "",
+                    event_type=event_type or ""
+                )
+                
+                if analysis_result:
+                    # 检查新的分析结果是否有改善
+                    new_industries = analysis_result.get('industries', [])
+                    if (new_industries and 
+                        "分析失败" not in str(new_industries) and 
+                        "分析后无相关行业" not in str(new_industries)):
+                        # 保存改善的分析结果
+                        self.save_analysis_result(policy_id, analysis_result)
+                        success_count += 1
+                        logger.info(f"政策重新分析成功: {title[:50]}..., 新行业: {new_industries}")
+                    else:
+                        # 保存结果，即使仍然是失败或无相关行业
+                        self.save_analysis_result(policy_id, analysis_result)
+                        logger.info(f"政策重新分析完成但结果未改善: {title[:50]}..., 结果: {new_industries}")
+                else:
+                    logger.warning(f"政策重新分析失败: {title[:50]}...")
+                
+                # 减少延迟时间
+                time.sleep(0.8)
+            
+            logger.info(f"重新分析完成，处理了 {len(policies)} 条政策，其中 {success_count} 条有改善")
+            return success_count
+            
+        except Exception as e:
+            logger.error(f"批量重新分析政策时发生错误: {str(e)}")
             return 0
     
     async def analyze_unprocessed_policies_async(self, limit: int = 20, max_concurrent: int = 5) -> int:
@@ -851,6 +965,77 @@ class AIPolicyAnalyzer:
         except Exception as e:
             logger.error(f"查询股票相关政策失败: {str(e)}")
             return []
+    
+    def get_analysis_statistics(self) -> Dict:
+        """获取分析状态统计信息"""
+        try:
+            with self.get_db_connection() as conn:
+                cursor = conn.cursor()
+                
+                # 统计总政策数
+                cursor.execute('SELECT COUNT(*) FROM policy_events')
+                total_policies = cursor.fetchone()[0]
+                
+                # 统计已分析政策数
+                cursor.execute('SELECT COUNT(*) FROM policy_analysis')
+                analyzed_policies = cursor.fetchone()[0]
+                
+                # 统计分析失败的政策数
+                cursor.execute("SELECT COUNT(*) FROM policy_analysis WHERE industries LIKE '%分析失败%'")
+                failed_analysis = cursor.fetchone()[0]
+                
+                # 统计无相关行业的政策数
+                cursor.execute("SELECT COUNT(*) FROM policy_analysis WHERE industries LIKE '%分析后无相关行业%'")
+                no_industry_analysis = cursor.fetchone()[0]
+                
+                # 统计成功分析且有相关行业的政策数
+                cursor.execute("""
+                    SELECT COUNT(*) FROM policy_analysis 
+                    WHERE industries NOT LIKE '%分析失败%' 
+                    AND industries NOT LIKE '%分析后无相关行业%'
+                    AND industries != '[]'
+                """)
+                successful_analysis = cursor.fetchone()[0]
+                
+                # 统计未分析的政策数
+                unanalyzed_policies = total_policies - analyzed_policies
+                
+                # 统计需要重新分析的政策数
+                need_reanalysis = failed_analysis + no_industry_analysis
+                
+                return {
+                    'total_policies': total_policies,
+                    'analyzed_policies': analyzed_policies,
+                    'unanalyzed_policies': unanalyzed_policies,
+                    'successful_analysis': successful_analysis,
+                    'failed_analysis': failed_analysis,
+                    'no_industry_analysis': no_industry_analysis,
+                    'need_reanalysis': need_reanalysis,
+                    'analysis_rate': round(analyzed_policies / total_policies * 100, 2) if total_policies > 0 else 0,
+                    'success_rate': round(successful_analysis / analyzed_policies * 100, 2) if analyzed_policies > 0 else 0
+                }
+                
+        except Exception as e:
+            logger.error(f"获取分析统计信息失败: {str(e)}")
+            return {}
+    
+    def print_analysis_statistics(self):
+        """打印分析状态统计信息"""
+        stats = self.get_analysis_statistics()
+        if stats:
+            print("\n=== 政策分析统计信息 ===")
+            print(f"总政策数: {stats['total_policies']}")
+            print(f"已分析政策数: {stats['analyzed_policies']}")
+            print(f"未分析政策数: {stats['unanalyzed_policies']}")
+            print(f"成功分析且有相关行业: {stats['successful_analysis']}")
+            print(f"分析失败: {stats['failed_analysis']}")
+            print(f"分析后无相关行业: {stats['no_industry_analysis']}")
+            print(f"需要重新分析: {stats['need_reanalysis']}")
+            print(f"分析覆盖率: {stats['analysis_rate']}%")
+            print(f"分析成功率: {stats['success_rate']}%")
+            print("========================\n")
+        else:
+            print("无法获取统计信息")
 
 
 if __name__ == "__main__":

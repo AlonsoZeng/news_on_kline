@@ -12,7 +12,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from contextlib import contextmanager
 import json
-from eodhd import APIClient # 添加 EODHD 客户端
+
 from src.core.policy_data_fetcher import PolicyDataFetcher
 from src.core.ai_policy_analyzer import AIPolicyAnalyzer
 from src.core.stock_industry_analyzer import StockIndustryAnalyzer

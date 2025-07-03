@@ -13,6 +13,12 @@ from urllib3.util.retry import Retry
 from contextlib import contextmanager
 import json
 
+# 为 pandas 2.0+ 添加 append 方法兼容性
+if not hasattr(pd.DataFrame, 'append'):
+    def append_compat(self, other, ignore_index=False, **kwargs):
+        return pd.concat([self, other], ignore_index=ignore_index, **kwargs)
+    pd.DataFrame.append = append_compat
+
 from src.core.policy_data_fetcher import PolicyDataFetcher
 from src.core.ai_policy_analyzer import AIPolicyAnalyzer
 from src.core.stock_industry_analyzer import StockIndustryAnalyzer
@@ -46,7 +52,6 @@ config = AppConfig()
 TUSHARE_TOKEN = config.TUSHARE_TOKEN
 DB_FILE = config.DB_FILE
 EVENTS_DB_FILE = config.EVENTS_DB_FILE
-EODHD_API_TOKEN = config.EODHD_API_TOKEN
 SILICONFLOW_API_KEY = config.SILICONFLOW_API_KEY
 
 # --- Flask 应用初始化 --- #
@@ -292,46 +297,7 @@ def set_last_update_date(stock_code, today_date):
         print(f"写入 {stock_code} 最后更新日期失败: {e}")
 
 # --- 数据获取与处理 --- #
-def fetch_economic_events(api_token, country_code, date_from, date_to):
-    """使用EODHD API获取指定国家和日期范围的经济事件"""
-    if not api_token or api_token == 'YOUR_EODHD_API_TOKEN' or api_token == 'demo':
-        print("提示：EODHD API Token 未有效配置或仍为 'demo'，可能无法获取真实的宏观事件数据或受到严格限制。")
-        if api_token == 'demo': 
-             print("当前使用 'demo' EODHD token，将不获取宏观事件。")
-             return []
-        return []
 
-    try:
-        import requests
-        # 使用EODHD经济事件API的正确端点
-        url = f'https://eodhd.com/api/economic-events'
-        params = {
-            'api_token': api_token,
-            'fmt': 'json',
-            'country': country_code,
-            'from': date_from,
-            'to': date_to
-        }
-        
-        response = requests.get(url, params=params, timeout=30)
-        response.raise_for_status()
-        events = response.json()
-        
-        processed_events = []
-        if isinstance(events, list):
-            for event in events:
-                event_date_str = event.get('date')
-                event_description = event.get('event') or event.get('title') or event.get('name', '未知事件')
-                if event_date_str and event_description:
-                    try:
-                        event_date = datetime.strptime(event_date_str.split(' ')[0], '%Y-%m-%d').strftime('%Y-%m-%d')
-                        processed_events.append({'date': event_date, 'title': event_description})
-                    except ValueError as ve:
-                        print(f"解析事件日期失败: {event_date_str}, 错误: {ve}")
-        return processed_events
-    except Exception as e:
-        print(f"获取 {country_code} 从 {date_from} 到 {date_to} 的经济事件时出错: {e}")
-        return []
 
 def fetch_stock_kline_data(stock_code_tushare):
     """获取股票K线数据，优先从数据库读取，必要时从TuShare API获取"""
@@ -1412,9 +1378,6 @@ def show_kline_chart(stock_code_input):
     # 如果获取不到股票名称，设置默认值
     if not stock_name:
         stock_name = f"股票代码: {stock_code_input}"
-    
-    # 获取中国相关的经济事件 (国家代码 'CN')
-    economic_events_cn = fetch_economic_events(EODHD_API_TOKEN, 'CN', date_from_str, date_to_str)
     
     # 智能获取相关事件数据
     db_events = get_smart_events_for_stock(stock_code_input)

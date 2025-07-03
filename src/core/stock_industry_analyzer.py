@@ -253,6 +253,7 @@ class StockIndustryAnalyzer:
         
         return result_info
     
+    # 在 analyze_stock_industry 方法中，第360行附近修改
     def analyze_stock_industry(self, stock_code: str, stock_name: str = "") -> Optional[Dict]:
         """使用AI分析股票所属行业（基于详细信息）"""
         
@@ -267,96 +268,98 @@ class StockIndustryAnalyzer:
         
         # 构建包含详细信息的提示词
         detail_text = f"""
-股票基本信息：
-- 股票代码：{detail_info.get('stock_code', stock_code)}
-- 股票名称：{detail_info.get('stock_name', stock_name)}
-- 公司描述：{detail_info.get('description', '')}
-- 经营范围：{detail_info.get('business_scope', '')}
-- 主营业务：{detail_info.get('main_business', '')}
-- 行业分类：{detail_info.get('industry_classification', '')}
-"""
+    股票基本信息：
+    - 股票代码：{detail_info.get('stock_code', stock_code)}
+    - 股票名称：{detail_info.get('stock_name', stock_name)}
+    - 公司描述：{detail_info.get('description', '')}
+    - 经营范围：{detail_info.get('business_scope', '')}
+    - 主营业务：{detail_info.get('main_business', '')}
+    - 行业分类：{detail_info.get('industry_classification', '')}
+    """
         
         # 根据股票类型构建不同的提示词
         if stock_type == "ETF":
             prompt = f"""
-请基于以下ETF基金的详细信息，分析其所跟踪的行业板块：
-
-{detail_text}
-
-分析要求：
-1. 基于ETF的名称、描述和相关信息，识别其主要投资的行业领域
-2. 分析该ETF覆盖的细分行业
-3. 考虑A股市场的行业分类标准
-4. 提供详细的分析说明，说明判断依据
-5. 给出分析的置信度评分(0-1之间)
-
-请以JSON格式返回结果：
-{{
-    "industries": ["主要行业1", "细分行业1", "相关行业1"],
-    "analysis_summary": "基于ETF详细信息的分析说明，包括判断依据",
-    "confidence_score": 0.85
-}}
-
-注意：
-- industries数组应包含3-5个相关行业关键词
-- 行业名称要准确、具体
-- 分析说明要详细，包含判断依据
-- 置信度要基于信息完整度客观评估
-"""
+    请基于以下ETF基金的详细信息，分析其所跟踪的行业板块：
+    
+    {detail_text}
+    
+    分析要求：
+    1. 基于ETF的名称、描述和相关信息，识别其主要投资的行业领域
+    2. 分析该ETF覆盖的细分行业
+    3. 考虑A股市场的行业分类标准
+    4. 提供详细的分析说明，说明判断依据
+    5. 给出分析的置信度评分(0-1之间)
+    
+    请以JSON格式返回结果：
+    {{
+        "industries": ["主要行业1", "细分行业1", "相关行业1"],
+        "analysis_summary": "基于ETF详细信息的分析说明，包括判断依据",
+        "confidence_score": 0.85
+    }}
+    
+    注意：
+    - industries数组应包含3-5个相关行业关键词
+    - 行业名称要准确、具体
+    - 分析说明要详细，包含判断依据
+    - 置信度要基于信息完整度客观评估
+    """
         elif stock_type == "指数":
             prompt = f"""
-请基于以下指数的详细信息，分析其所覆盖的行业板块：
-
-{detail_text}
-
-分析要求：
-1. 基于指数的名称、描述和相关信息，识别其主要覆盖的行业领域
-2. 分析该指数包含的主要行业构成
-3. 考虑A股市场的行业分类标准
-4. 提供详细的分析说明，说明判断依据
-5. 给出分析的置信度评分(0-1之间)
-
-请以JSON格式返回结果：
-{{
-    "industries": ["主要行业1", "细分行业1", "相关行业1"],
-    "analysis_summary": "基于指数详细信息的分析说明，包括判断依据",
-    "confidence_score": 0.85
-}}
-
-注意：
-- industries数组应包含3-5个相关行业关键词
-- 行业名称要准确、具体
-- 分析说明要详细，包含判断依据
-- 置信度要基于信息完整度客观评估
-"""
+    请基于以下指数的详细信息，分析其所覆盖的行业板块：
+    
+    {detail_text}
+    
+    分析要求：
+    1. 基于指数的名称、描述和相关信息，识别其主要覆盖的行业领域
+    2. 分析该指数包含的主要行业构成
+    3. 考虑A股市场的行业分类标准
+    4. 提供详细的分析说明，说明判断依据
+    5. 给出分析的置信度评分(0-1之间)
+    
+    请以JSON格式返回结果：
+    {{
+        "industries": ["主要行业1", "细分行业1", "相关行业1"],
+        "analysis_summary": "基于指数详细信息的分析说明，包括判断依据",
+        "confidence_score": 0.85
+    }}
+    
+    注意：
+    - industries数组应包含3-5个相关行业关键词
+    - 行业名称要准确、具体
+    - 分析说明要详细，包含判断依据
+    - 置信度要基于信息完整度客观评估
+    """
         else:  # 普通股票
             prompt = f"""
-请基于以下上市公司的详细信息，分析其所属的行业分类：
-
-{detail_text}
-
-分析要求：
-1. 基于公司的名称、描述、经营范围、主营业务等信息，识别其主营业务所属的行业
-2. 分析该公司涉及的细分行业领域
-3. 考虑A股市场的行业分类标准
-4. 提供详细的分析说明，说明判断依据
-5. 给出分析的置信度评分(0-1之间)
-
-请以JSON格式返回结果：
-{{
-    "industries": ["主要行业1", "细分行业1", "相关行业1"],
-    "analysis_summary": "基于公司详细信息的分析说明，包括判断依据",
-    "confidence_score": 0.85
-}}
-
-注意：
-- industries数组应包含3-5个相关行业关键词
-- 行业名称要准确、具体
-- 分析说明要详细，包含判断依据
-- 置信度要基于信息完整度客观评估
-"""
+    请基于以下上市公司的详细信息，分析其所属的行业分类：
+    
+    {detail_text}
+    
+    分析要求：
+    1. 基于公司的名称、描述、经营范围、主营业务等信息，识别其主营业务所属的行业
+    2. 分析该公司涉及的细分行业领域
+    3. 考虑A股市场的行业分类标准
+    4. 提供详细的分析说明，说明判断依据
+    5. 给出分析的置信度评分(0-1之间)
+    
+    请以JSON格式返回结果：
+    {{
+        "industries": ["主要行业1", "细分行业1", "相关行业1"],
+        "analysis_summary": "基于公司详细信息的分析说明，包括判断依据",
+        "confidence_score": 0.85
+    }}
+    
+    注意：
+    - industries数组应包含3-5个相关行业关键词
+    - 行业名称要准确、具体
+    - 分析说明要详细，包含判断依据
+    - 置信度要基于信息完整度客观评估
+    """
         
-        # 根据股票类型调整系统提示词
+        # 根据股票类型调整系统提示词 - 确保变量初始化
+        system_content = ""  # 添加默认初始化
+        
         if stock_type == "ETF":
             system_content = "你是一个专业的ETF基金分析师，擅长分析A股市场的ETF基金行业分类。请基于ETF的详细信息（包括名称、描述、投资范围等），准确识别其跟踪的行业板块。你需要仔细分析提供的所有信息，给出详细的判断依据。"
         elif stock_type == "指数":
@@ -365,6 +368,11 @@ class StockIndustryAnalyzer:
             system_content = "你是一个专业的股票行业分析师，擅长分析A股市场的上市公司行业分类。请基于公司的详细信息（包括名称、描述、经营范围、主营业务等），准确识别其主营业务所属行业。你需要仔细分析提供的所有信息，给出详细的判断依据。"
         
         try:
+            # 添加网络异常处理
+            if not self.api_key or self.api_key == 'YOUR_API_KEY':
+                logger.warning("AI API Key未配置，使用降级方案")
+                return self._fallback_industry_analysis(stock_code, stock_name, stock_type)
+            
             # 使用旧版本openai API调用
             full_prompt = system_content + "\n\n" + prompt
             response = openai.Completion.create(
@@ -398,7 +406,8 @@ class StockIndustryAnalyzer:
                 
         except Exception as e:
             logger.error(f"调用AI API失败: {e}")
-            logger.error(f"分析股票行业时发生异常: {e}")
+            # 使用降级方案
+            return self._fallback_industry_analysis(stock_code, stock_name, stock_type)
         
         return None
     

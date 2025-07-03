@@ -138,8 +138,24 @@
     </footer>
 
     <script type="text/javascript">
-        // 将events数据存储到全局变量中，供点击事件使用
-        window.eventsData = {{ events | tojson | safe }};
+        // 使用AJAX异步加载events数据
+        window.eventsData = [];
+        
+        // 异步获取events数据
+        fetch('/api/events?stock_code={{ current_stock_code }}')
+            .then(response => response.json())
+            .then(data => {
+                window.eventsData = data.events || [];
+                console.log('Events数据异步加载成功，共', window.eventsData.length, '条记录');
+                // 触发事件数据加载完成的回调
+                if (typeof onEventsDataLoaded === 'function') {
+                    onEventsDataLoaded();
+                }
+            })
+            .catch(error => {
+                console.error('Events数据加载失败:', error);
+                window.eventsData = [];
+            });
     </script>
     
     <!-- 引入外部JavaScript文件 -->

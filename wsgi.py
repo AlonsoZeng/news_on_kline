@@ -15,7 +15,7 @@ if project_home not in sys.path:
 
 # 设置环境变量
 os.environ['FLASK_ENV'] = 'production'
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+os.environ['FLASK_DEBUG'] = 'False'
 
 # 导入 Flask 应用
 from app import app as application

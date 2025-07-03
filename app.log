@@ -6506,3 +6506,15 @@ Current browser version is 137.0.7151.104 with binary path C:\Program Files\Goog
 2025-07-01 23:24:23,133 - werkzeug - INFO - 192.168.2.10 - - [01/Jul/2025 23:24:23] "GET /kline/512800.SH HTTP/1.1" 200 -
 2025-07-01 23:24:23,231 - werkzeug - INFO - 192.168.2.10 - - [01/Jul/2025 23:24:23] "[36mGET /static/css/kline.css HTTP/1.1[0m" 304 -
 2025-07-01 23:24:23,339 - werkzeug - INFO - 192.168.2.10 - - [01/Jul/2025 23:24:23] "[36mGET /static/js/kline.js HTTP/1.1[0m" 304 -
+2025-07-03 10:55:29,979 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-07-03 10:55:29,982 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-07-03 10:55:30,054 - werkzeug - INFO -  * Restarting with stat
+2025-07-03 10:55:32,390 - src.core.ai_policy_analyzer - INFO - AI分析结果表初始化完成
+2025-07-03 10:55:32,390 - src.core.stock_industry_analyzer - INFO - 股票行业映射表初始化完成
+2025-07-03 10:55:32,427 - werkzeug - WARNING -  * Debugger is active!
+2025-07-03 10:55:32,441 - werkzeug - INFO -  * Debugger PIN: 561-696-962
+2025-07-03 10:55:33,454 - werkzeug - WARNING -  * Running on all addresses.
+   WARNING: This is a development server. Do not use it in a production deployment.
+2025-07-03 10:55:33,455 - werkzeug - INFO -  * Running on http://192.168.2.10:5001/ (Press CTRL+C to quit)
+2025-07-03 10:57:52,648 - werkzeug - INFO -  * Detected change in 'C:\\zencode\\news_on_kline\\config\\app_config.py', reloading
+2025-07-03 10:57:52,976 - werkzeug - INFO -  * Restarting with stat

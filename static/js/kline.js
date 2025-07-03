@@ -15,10 +15,78 @@ class ChartUtils {
      * @returns {Object|null} ECharts实例或null
      */
     static getEChartsInstance() {
-        const chartContainer = document.querySelector('#kline-chart div[_echarts_instance_]');
-        if (chartContainer) {
-            return echarts.getInstanceByDom(chartContainer);
+        const container = document.getElementById('kline-chart');
+        if (!container) {
+            console.warn('未找到图表容器 #kline-chart');
+            return null;
         }
+    
+        // 方法1：尝试通过_echarts_instance_属性查找
+        let chartContainer = container.querySelector('div[_echarts_instance_]');
+        if (chartContainer && chartContainer._echarts_instance_) {
+            const instance = echarts.getInstanceByDom(chartContainer);
+            if (instance) {
+                console.log('通过_echarts_instance_属性找到ECharts实例');
+                return instance;
+            }
+        }
+    
+        // 方法2：遍历所有div元素，查找ECharts实例
+        const allDivs = container.querySelectorAll('div');
+        for (let div of allDivs) {
+            const instance = echarts.getInstanceByDom(div);
+            if (instance) {
+                console.log('通过遍历div元素找到ECharts实例');
+                return instance;
+            }
+        }
+    
+        // 方法3：通过canvas元素查找父div
+        const canvasElements = container.querySelectorAll('canvas');
+        for (let canvas of canvasElements) {
+            let parent = canvas.parentElement;
+            while (parent && parent !== container) {
+                const instance = echarts.getInstanceByDom(parent);
+                if (instance) {
+                    console.log('通过canvas父元素找到ECharts实例');
+                    return instance;
+                }
+                parent = parent.parentElement;
+            }
+        }
+    
+        // 方法4：尝试通过全局echarts对象获取所有实例
+        if (typeof echarts !== 'undefined' && echarts.getInstanceByDom) {
+            // 查找容器内所有可能的图表元素
+            const possibleChartElements = container.querySelectorAll('div[style*="position"], div[style*="width"], div[style*="height"]');
+            for (let element of possibleChartElements) {
+                const instance = echarts.getInstanceByDom(element);
+                if (instance) {
+                    console.log('通过样式特征找到ECharts实例');
+                    return instance;
+                }
+            }
+        }
+    
+        // 方法5：最后尝试直接在容器上查找
+        if (typeof echarts !== 'undefined') {
+            const instance = echarts.getInstanceByDom(container);
+            if (instance) {
+                console.log('直接在容器上找到ECharts实例');
+                return instance;
+            }
+        }
+    
+        console.warn('未找到ECharts实例，可能的原因：');
+        console.warn('1. 图表还未完全加载');
+        console.warn('2. pyecharts生成的HTML结构发生变化');
+        console.warn('3. ECharts库加载失败');
+        console.warn('4. 图表容器结构异常');
+        
+        // 调试信息
+        console.log('容器内容：', container.innerHTML.substring(0, 500));
+        console.log('ECharts是否可用：', typeof echarts !== 'undefined');
+        
         return null;
     }
 
@@ -537,29 +605,48 @@ class ChartManager {
  */
 class App {
     /**
-     * 初始化应用
+     * 初始化应用 - 改进版本
      */
     static init() {
         document.addEventListener('DOMContentLoaded', function() {
-            // 延迟执行，确保pyecharts图表已经渲染完成
+            // 等待更长时间，确保pyecharts图表完全渲染
             setTimeout(function() {
                 const chartInstance = ChartUtils.getEChartsInstance();
                 
                 if (!chartInstance) {
-                    // 如果第一次获取失败，再次尝试获取
+                    console.log('第一次获取ECharts实例失败，3秒后重试...');
                     setTimeout(function() {
                         const retryChart = ChartUtils.getEChartsInstance();
                         if (retryChart) {
+                            console.log('重试成功，初始化图表交互');
                             ChartManager.initializeChartInteractions(retryChart);
                         } else {
-                            console.error('无法获取ECharts实例');
+                            console.log('第二次重试失败，8秒后最后一次尝试...');
+                            setTimeout(function() {
+                                const finalRetryChart = ChartUtils.getEChartsInstance();
+                                if (finalRetryChart) {
+                                    console.log('最终重试成功，初始化图表交互');
+                                    ChartManager.initializeChartInteractions(finalRetryChart);
+                                } else {
+                                    console.error('无法获取ECharts实例，请检查：');
+                                    console.error('1. ECharts库是否正确加载');
+                                    console.error('2. 图表HTML是否正确生成');
+                                    console.error('3. 网络连接是否正常');
+                                    console.error('4. pyecharts版本兼容性');
+                                    
+                                    // 提供手动重试选项
+                                    console.log('您可以在控制台执行以下命令手动重试：');
+                                    console.log('ChartManager.initializeChartInteractions(ChartUtils.getEChartsInstance())');
+                                }
+                            }, 8000);
                         }
-                    }, 2000);
+                    }, 3000);
                     return;
                 }
                 
+                console.log('成功获取ECharts实例，初始化图表交互');
                 ChartManager.initializeChartInteractions(chartInstance);
-            }, 1000);
+            }, 2500); // 增加到2.5秒
         });
     }
 }

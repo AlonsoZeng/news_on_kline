@@ -191,13 +191,13 @@ class PolicyDataFetcher:
         except Exception as e:
             logger.error(f"记录{source_name}抓取状态时出错: {e}")
     
-    def fetch_gov_cn_policies(self, days_back=30, target_month=None, max_pages=30):
+    def fetch_gov_cn_policies(self, days_back=30, target_month=None, max_pages=10):
         """从中国政府网获取政策数据
         
         Args:
             days_back: 获取最近多少天的数据
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，默认10页
         """
         source_name = "gov_cn"
         
@@ -323,12 +323,12 @@ class PolicyDataFetcher:
         self.record_fetch_status(source_name, 'success', len(policies))
         return policies
     
-    def fetch_mof_policies(self, target_month=None, max_pages=30):
+    def fetch_mof_policies(self, target_month=None, max_pages=10):
         """从财政部获取政策数据
         
         Args:
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，默认10页
         """
         source_name = "mof"
         
@@ -458,12 +458,12 @@ class PolicyDataFetcher:
         self.record_fetch_status(source_name, 'success', len(policies))
         return policies
     
-    def fetch_ndrc_policies(self, target_month=None, max_pages=30):
+    def fetch_ndrc_policies(self, target_month=None, max_pages=10):
         """从国家发改委获取政策数据
         
         Args:
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，默认10页
         """
         source_name = "ndrc"
         
@@ -1113,12 +1113,12 @@ class PolicyDataFetcher:
         else:
             return '证券监管'
     
-    def fetch_all_policies(self, target_month=None, max_pages=30):
+    def fetch_all_policies(self, target_month=None, max_pages=10):
         """获取所有来源的政策数据
         
         Args:
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，默认10页
         """
         if target_month:
             logger.info(f"开始获取 {target_month} 月份的政策数据，最多抓取 {max_pages} 页...")
@@ -1155,12 +1155,12 @@ class PolicyDataFetcher:
         logger.info(f"原始数据 {len(all_policies)} 条，去重后 {len(unique_policies)} 条唯一政策数据")
         return unique_policies
     
-    def run_data_collection(self, target_month=None, max_pages=30):
+    def run_data_collection(self, target_month=None, max_pages=10):
         """运行数据收集流程
         
         Args:
             target_month: 目标月份，格式为'2025-06'，如果指定则优先抓取该月份数据
-            max_pages: 最大抓取分页数，默认30页
+            max_pages: 最大抓取分页数，默认10页
         """
         if target_month:
             logger.info(f"开始收集 {target_month} 月份的政策数据，最多抓取 {max_pages} 页")

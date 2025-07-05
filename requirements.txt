@@ -1,15 +1,31 @@
-# Flask>=2.0.0
-# tushare>=1.2.80
-# pyecharts>=1.9.0
-# pandas>=1.0.0,<1.2.0
+# Web框架
 Flask==2.3.3
-tushare==1.2.89
-pyecharts==1.9.1
+Werkzeug==2.3.7
+
+# 数据处理
 pandas==2.0.3
+numpy==1.24.3
+
+# 股票数据
+tushare==1.2.89
+
+# 图表库
+pyecharts==1.9.1
+
+# HTTP请求
 requests==2.31.0
+
+# HTML解析
 beautifulsoup4==4.12.2
 lxml==4.9.3
-# eodhd==1.0.0
+
+# 异步支持
 aiohttp>=3.7.4
+
+# AI接口
+openai==0.8.0
+
+# 生产环境服务器（可选）
+gunicorn==21.2.0
 asyncio>=3.4.3
 openai==0.8.0

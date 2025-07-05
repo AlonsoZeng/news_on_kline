@@ -1400,11 +1400,12 @@ register_event_routes(app)
 
 # --- 主程序入口 --- #
 if __name__ == '__main__':
-    # 确保static文件夹存在
-    if not os.path.exists(os.path.join(app.root_path, 'static')):
-        os.makedirs(os.path.join(app.root_path, 'static'))
+    # 初始化数据库
+    init_events_database()
     
-    # 执行数据迁移
-    migrate_mock_events_to_db()
+    # 获取端口配置
+    port = int(os.environ.get('FLASK_PORT', 8080))
+    host = os.environ.get('FLASK_HOST', '0.0.0.0')
     
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # 启动应用
+    app.run(host=host, port=port, debug=False)

@@ -329,15 +329,23 @@ class EventHandler {
     static _handleEventItemClick(element, chartInstance) {
         const eventId = element.getAttribute('data-event-id');
         const eventDate = element.getAttribute('data-event-date');
+        const sourceUrl = element.getAttribute('data-source-url');
         
         // 滚动K线图到对应位置
         ChartUtils.scrollToDate(eventDate, chartInstance);
         
         // 在新标签页打开事件链接
-        if (window.eventsData && window.eventsData.length > 0) {
-            const event = window.eventsData.find(e => e && e.id && e.id.toString() === eventId);
-            if (event && event.source_url) {
-                window.open(event.source_url, '_blank');
+        if (sourceUrl && sourceUrl.trim() !== '') {
+            window.open(sourceUrl, '_blank');
+        } else {
+            // 如果没有直接的URL，尝试从异步数据中获取
+            if (window.eventsData && window.eventsData.length > 0) {
+                const event = window.eventsData.find(e => e && e.id && e.id.toString() === eventId);
+                if (event && event.source_url) {
+                    window.open(event.source_url, '_blank');
+                } else {
+                    console.log('该事件暂无原文链接');
+                }
             }
         }
     }

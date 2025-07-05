@@ -115,11 +115,17 @@
                          data-department="{{ event.department or '' }}"
                          data-policy-level="{{ event.policy_level or '' }}"
                          data-impact-level="{{ event.impact_level or '' }}"
-                         data-industries="{{ event.ai_industries | join(',') if event.ai_industries else '' }}">
+                         data-industries="{{ event.ai_industries | join(',') if event.ai_industries else '' }}"
+                         data-source-url="{{ event.source_url or '' }}">
                         <div class="event-date">
                             <i class="fas fa-calendar"></i> {{ event.date }}
                         </div>
                         <div class="event-title">{{ event.title }}</div>
+                        {% if event.source_url %}
+                        <div class="event-link-indicator">
+                            <i class="fas fa-external-link-alt"></i> 点击查看原文
+                        </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>

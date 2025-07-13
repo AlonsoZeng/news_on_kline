@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-政策数据自动抓取脚本 - 抓取最近30页内容并增量更新
+政策数据自动抓取脚本 - 抓取最近10页内容并增量更新
 支持每天自动运行，只抓取新增内容
 """
 
@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def fetch_latest_policies():
-    """抓取最新政策数据（30页）"""
+    """抓取最新政策数据（10页）"""
     logger.info("="*50)
     logger.info("开始执行政策数据抓取任务")
     logger.info(f"执行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -32,9 +32,9 @@ def fetch_latest_policies():
         # 创建数据抓取器实例
         fetcher = PolicyDataFetcher()
         
-        # 运行数据收集，抓取最近30页
+        # 运行数据收集，抓取最近10页
         # 不指定target_month，抓取所有最新数据
-        saved_count = fetcher.run_data_collection(target_month=None, max_pages=30)
+        saved_count = fetcher.run_data_collection(target_month=None, max_pages=10)
         
         logger.info(f"政策数据抓取完成，新增保存 {saved_count} 条数据")
         logger.info("="*50)
@@ -47,7 +47,7 @@ def fetch_latest_policies():
         return 0
 
 def fetch_specific_month_policies(target_month):
-    """抓取指定月份的政策数据（30页）
+    """抓取指定月份的政策数据（10页）
     
     Args:
         target_month: 目标月份，格式为'2025-06'
@@ -60,8 +60,8 @@ def fetch_specific_month_policies(target_month):
         # 创建数据抓取器实例
         fetcher = PolicyDataFetcher()
         
-        # 运行数据收集，抓取指定月份的30页数据
-        saved_count = fetcher.run_data_collection(target_month=target_month, max_pages=30)
+        # 运行数据收集，抓取指定月份的10页数据
+        saved_count = fetcher.run_data_collection(target_month=target_month, max_pages=10)
         
         logger.info(f"{target_month} 月份政策数据抓取完成，新增保存 {saved_count} 条数据")
         logger.info("="*50)

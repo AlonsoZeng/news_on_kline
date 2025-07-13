@@ -25,7 +25,6 @@ aiohttp>=3.7.4
 # AI接口
 openai==0.8.0
 
-# 生产环境服务器（可选）
+# 生产环境服务器
 gunicorn==21.2.0
 asyncio>=3.4.3
-openai==0.8.0

@@ -12,12 +12,11 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from contextlib import contextmanager
 import json
+import logging  # 添加这行
 
-# 为 pandas 2.0+ 添加 append 方法兼容性
-if not hasattr(pd.DataFrame, 'append'):
-    def append_compat(self, other, ignore_index=False, **kwargs):
-        return pd.concat([self, other], ignore_index=ignore_index, **kwargs)
-    pd.DataFrame.append = append_compat
+# 配置logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)  # 添加这行
 
 from src.core.policy_data_fetcher import PolicyDataFetcher
 from src.core.ai_policy_analyzer import AIPolicyAnalyzer
@@ -709,6 +708,40 @@ def show_kline_chart(stock_code_input):
 
 # --- 注册事件管理路由 --- #
 register_event_routes(app)
+
+# 添加政策数据获取路由
+# 添加政策数据获取路由
+@app.route('/fetch-policy-data', methods=['POST'])
+def fetch_policy_data():
+    """获取最新政策数据"""
+    try:
+        # 添加logging导入（如果还没有的话）
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        # 创建政策数据获取器实例
+        policy_fetcher = PolicyDataFetcher(EVENTS_DB_FILE)
+        
+        # 使用完整的数据收集方法，获取所有数据源的政策数据
+        # 这将调用中国政府网、财政部、国家发改委、证监会四个数据源
+        saved_count = policy_fetcher.run_data_collection(target_month=None, max_pages=30)
+        
+        return jsonify({
+            'success': True,
+            'message': f'成功获取并保存 {saved_count} 条新政策数据',
+            'records_count': saved_count,
+            'data_sources': ['中国政府网', '财政部', '国家发改委', '证监会']
+        })
+        
+    except Exception as e:
+        # 添加更详细的错误日志
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"获取政策数据时出错: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'获取政策数据失败: {str(e)}'
+        }), 500
 
 # --- 主程序入口 --- #
 if __name__ == '__main__':

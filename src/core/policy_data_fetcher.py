@@ -142,7 +142,8 @@ class PolicyDataFetcher:
             
             # 计算时间间隔
             time_diff = datetime.now() - last_fetch_time
-            hours_diff = time_diff.total_seconds() / 3600
+            # hours_diff = time_diff.total_seconds() / 3600
+            hours_diff = time_diff.total_seconds() / 1
             
             # 检查时间间隔和上次抓取状态
             if hours_diff < min_interval_hours:
@@ -1189,6 +1190,7 @@ class PolicyDataFetcher:
             try:
                 from .ai_policy_analyzer import AIPolicyAnalyzer
                 import os
+                import sys
                 
                 # 获取AI API Key
                 api_key = os.getenv('SILICONFLOW_API_KEY', 'sk-rtfxnalfnpfrucbjvzzizgsltocaywdtfvvcmloznshsqzfo')
@@ -1199,12 +1201,29 @@ class PolicyDataFetcher:
                     # 优先使用异步分析（如果数据量较大）
                     if saved_count >= 5:
                         import asyncio
-                        analyzed_count = asyncio.run(
-                            analyzer.analyze_unprocessed_policies_async(
-                                limit=saved_count + 5,
-                                max_concurrent=3  # 数据抓取时使用较小的并发数
+                        
+                        # Python 3.7+ 兼容性处理
+                        if sys.version_info >= (3, 7):
+                            analyzed_count = asyncio.run(
+                                analyzer.analyze_unprocessed_policies_async(
+                                    limit=saved_count + 5,
+                                    max_concurrent=3  # 数据抓取时使用较小的并发数
+                                )
                             )
-                        )
+                        else:
+                            # Python 3.6 及以下版本的兼容性处理
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            try:
+                                analyzed_count = loop.run_until_complete(
+                                    analyzer.analyze_unprocessed_policies_async(
+                                        limit=saved_count + 5,
+                                        max_concurrent=3
+                                    )
+                                )
+                            finally:
+                                loop.close()
+                        
                         logger.info(f"AI异步分析完成，成功分析 {analyzed_count} 条新政策")
                     else:
                         # 数据量较小时使用同步分析
